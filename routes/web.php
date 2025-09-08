@@ -4,14 +4,17 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+    return Inertia::render('dashboard');
+})->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
+Route::get('labor-academica', function () {
+    return Inertia::render('LaborAcademica/Labor');
+})->name('labor-academica');
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+
+
+// cuando este la autenticacion
+Route::middleware(['auth', 'verified'])->group(function () {});
+
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';
