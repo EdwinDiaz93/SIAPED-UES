@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->foreignId('marital_status_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
             $table->foreignId('sex_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->foreignId('nacionalidad_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
             $table->string('email')->unique();
             $table->string("spouse_name")->nullable();
             $table->text('address')->nullable();

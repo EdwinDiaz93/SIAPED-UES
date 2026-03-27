@@ -101,3 +101,13 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+.bg-ues{
+    @apply bg-[#960000]
+}
+.text-ues{
+    @apply text-[#960000]
+}
+.border-ues{
+    @apply border-[#960000]
+}

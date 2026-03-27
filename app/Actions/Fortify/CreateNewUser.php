@@ -29,7 +29,7 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
-        $rolDocente = Role::findByName('docente');
+        $rolDocente = Role::findByName('inactivo');
         $user->assignRole($rolDocente);
         return $user;
     }
