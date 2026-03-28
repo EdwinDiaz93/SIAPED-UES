@@ -20,17 +20,18 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
         ])->validate();
         $user = User::create([
-            'name' => $input['name'],
+            // 'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
         ]);
-        $rolDocente = Role::findByName('inactivo');
-        $user->assignRole($rolDocente);
+        $rolInactivo = Role::findByName('inactivo');
+        $user->assignRole($rolInactivo);
         return $user;
     }
 }
