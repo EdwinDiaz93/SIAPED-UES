@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('value');
             $table->foreignId("catalog_type_id")->constrained('catalog_types')->onDelete('set null')->onUpdate('set null');
             $table->timestamps();
+            $table->unique(['catalog_type_id','value'],"unique_value");
         });
     }
 

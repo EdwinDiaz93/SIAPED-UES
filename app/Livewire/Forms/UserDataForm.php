@@ -14,7 +14,7 @@ class UserDataForm extends Form
     #[Validate('required', message: 'El campo sexo es requerido')]
     public $sexo = null;
     #[Validate('required', message: 'El campo fecha de nacimiento es requerido')]
-    public $birth_date = null;
+    public $fecha_nacimiento = null;
     #[Validate('required', message: 'El campo nacionalidad es requerido')]
     public $nacionalidad = null;
     #[Validate('required', message: 'El campo estado civil es requerido')]

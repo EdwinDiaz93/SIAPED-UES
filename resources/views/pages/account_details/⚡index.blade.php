@@ -3,24 +3,66 @@
 use Livewire\Component;
 use App\Livewire\Forms\UserDataForm;
 use App\Models\CatalogValue;
+use App\Models\User;
 use Livewire\Attributes\Validate;
+use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
     //
     public UserDataForm $userForm;
     public $sexOptions = [];
+    public $nacionalidades = [];
+    public $estadosCiviles = [];
+    public $initValues = [];
 
     public function saveUser()
     {
+
+        // actualzar usuario
+        $user = User::find(auth()->user()->id);
         $this->userForm->validate();
+        $user->name = $this->userForm->nombres;
+        $user->apellidos = $this->userForm->apellidos;
+        $user->fecha_nacimiento = $this->userForm->fecha_nacimiento;
+        $user->estado_civil = $this->userForm->estado_civil;
+        $user->sexo = $this->userForm->sexo;
+        $user->nacionalidad = $this->userForm->nacionalidad;
+        $user->conyugue = $this->userForm->conyugue;
+        $user->direccion = $this->userForm->direccion;
+        $user->telefono = $this->userForm->telefono;
+        $user->save();
+        $this->dispatch('notify', type: 'success', message: 'Datos de usuario guardados correctamente');
     }
+
 
     public function mount()
     {
-        $this->userForm = new UserDataForm($this, []);
+        $this->userForm = new UserDataForm($this, $this->initValues);
+
+        $user = User::find(auth()->user()->id);
+        if ($user != null) {
+            $this->userForm->nombres = $user->name;
+            $this->userForm->apellidos = $user->apellidos;
+            $this->userForm->sexo = $user->sexo;
+            $this->userForm->fecha_nacimiento = $user->fecha_nacimiento;
+            $this->userForm->nacionalidad = $user->nacionalidad;
+            $this->userForm->estado_civil = $user->estado_civil;
+            $this->userForm->conyugue = $user->conyugue;
+            $this->userForm->direccion = $user->direccion;
+            $this->userForm->telefono = $user->telefono;
+        }
+
         $this->sexOptions = CatalogValue::where('catalog_type_id', 1)->get();
-        $sexOption = $this->sexOptions[array_key_first($this->sexOptions->toArray())];
-        $this->userForm->sexo = $sexOption->id;
+        $this->nacionalidades = CatalogValue::where('catalog_type_id', 2)->get();
+        $this->estadosCiviles = CatalogValue::where('catalog_type_id', 3)->get();
+
+        $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->get();
+        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->get();
+        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->get();
+
+        $this->userForm->sexo = $sexOption[0]->id;
+        $this->userForm->nacionalidad = $nacionalidad[0]->id;
+        $this->userForm->estado_civil = $estadoCivil[0]->id;
     }
 };
 ?>
@@ -102,7 +144,8 @@ new class extends Component {
 
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Fecha Nacimiento:</label>
-                            <input type="date" wire:model='userForm.birth_date' class=" p-2 border rounded-lg border-ues w-full">
+                            <input type="date" wire:model='userForm.fecha_nacimiento'
+                                class=" p-2 border rounded-lg border-ues w-full">
                             @error('userForm.birth_date')
                                 <span class="error">{{ $message }}</span>
                             @enderror
@@ -110,34 +153,60 @@ new class extends Component {
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Nacionalidad:</label>
-                            <input type="text" class=" p-2 border rounded-lg border-ues w-full">
+
+                            <select wire:model='userForm.nacionalidad'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->nacionalidades as $nacionalidad)
+                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('userForm.nacionalidad')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Estado Civil:</label>
-                            <input type="text" class=" p-2 border rounded-lg border-ues w-full">
+
+                            <select wire:model='userForm.estado_civil'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->estadosCiviles as $estadoCivil)
+                                    <option value={{ $estadoCivil->id }}>{{ $estadoCivil->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('userForm.estado_civil')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
 
                     </div>
 
                     <div class="flex flex-row w-full mt-5">
+
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Conyugue:</label>
-                            <input type="text" class=" p-2 border rounded-lg border-ues w-full">
+                            <input wire:model='userForm.conyugue' type="text"
+                                class=" p-2 border rounded-lg border-ues w-full">
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Direccion:</label>
-                            <input type="text" class=" p-2 border rounded-lg border-ues w-full">
+                            <input wire:model='userForm.direccion' type="text"
+                                class=" p-2 border rounded-lg border-ues w-full">
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Telefono:</label>
-                            <input type="text" class=" p-2 border rounded-lg border-ues w-full">
+                            <input x-mask="9999-9999" wire:model='userForm.telefono' type="text"
+                                class=" p-2 border rounded-lg border-ues w-full">
                         </div>
 
                     </div>
 
                     <div class="w-full mt-10">
 
-                        <button form="dataForm" class="p-2 w-60 font-bold border border-ues rounded-lg  "
+                        <button form="dataForm" class="p-2 w-60 bg-ues text-white border-white  cursor-pointer  font-bold border  rounded-lg  "
                             type="submit">Guardar</button>
                     </div>
                 </form>

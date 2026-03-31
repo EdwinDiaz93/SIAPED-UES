@@ -17,7 +17,19 @@ use Spatie\Permission\Traits\HasRoles;
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
-    protected $fillable = ['email', 'password'];
+    protected $fillable = [
+        'email',
+        'password',
+        'name',
+        'apellidos',
+        'fecha_nacimiento',
+        'estado_civil',
+        'sexo',
+        'nacionalidad',
+        'conyugue',
+        'direccion',
+        'telefono',
+    ];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
 

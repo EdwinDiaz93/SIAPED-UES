@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name')->default('');
-            $table->string('last')->nullable();
-            $table->date('birth_date')->nullable();
-            $table->foreignId('marital_status_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
-            $table->foreignId('sex_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
-            $table->foreignId('nacionalidad_id')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->string('apellidos')->nullable();
+            $table->date('fecha_nacimiento')->nullable();
+            $table->foreignId('estado_civil')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->foreignId('sexo')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->foreignId('nacionalidad')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->string("conyugue")->nullable();
+            $table->text('direccion')->nullable();
+            $table->string('telefono')->nullable();
             $table->string('email')->unique();
-            $table->string("spouse_name")->nullable();
-            $table->text('address')->nullable();
-            $table->string('phone')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

@@ -14,8 +14,8 @@ class CatalogSeeder extends Seeder
      */
     public function run(): void
     {
-        // Catalog para sexo de usuario
-        $sex_catalog = CatalogType::create((["name" => 'Sex Catalog', "value" => 'Sex Catalog']));
+        // Catalog para sexo de usuario 1
+        $sex_catalog = CatalogType::create((["name" => 'Sexo', "value" => 'Sexo']));
 
         CatalogValue::create([
             'name' => 'Masculino',
@@ -27,8 +27,8 @@ class CatalogSeeder extends Seeder
             "value" => 'F',
             "catalog_type_id" => $sex_catalog->id,
         ]);
-        // Catalog para nacionalidad
-        $nacionalidad_catalog = CatalogType::create(["name" => "Nacionalidad Catalog", "value" => "Nacionalidad Catalog"]);
+        // Catalog para nacionalidad 2
+        $nacionalidad_catalog = CatalogType::create(["name" => "Nacionalidades", "value" => "Nacionalidades"]);
 
         $data = [
             ['name' => 'Argentino/a', 'value' => 'AR', 'catalog_type_id' => $nacionalidad_catalog->id],
@@ -53,6 +53,9 @@ class CatalogSeeder extends Seeder
             ['name' => 'Venezolano/a', 'value' => 'VE', 'catalog_type_id' => $nacionalidad_catalog->id]
         ];
 
+
+
+
         foreach ($data as $item) {
             CatalogValue::updateOrCreate(
                 ['value' => $item['value']],
@@ -62,5 +65,24 @@ class CatalogSeeder extends Seeder
                 ]
             );
         }
+
+        // Catalogo de estado civil
+        $estado_civil = CatalogType::create(["name" => "Estado Civil", "value" => "Estado Civil"]);
+
+        CatalogValue::create([
+            'name' => 'Soltero/a',
+            "value" => 'S',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Casado/a',
+            "value" => 'C',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Divorciado/a',
+            "value" => 'D',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
     }
 }
