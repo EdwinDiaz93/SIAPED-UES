@@ -84,5 +84,27 @@ class CatalogSeeder extends Seeder
             "value" => 'D',
             "catalog_type_id" => $estado_civil->id,
         ]);
+        $documento = CatalogType::create(["name" => "Documentos", "value" => "Documents"]);
+
+        CatalogValue::create([
+            'name' => 'Dui',
+            "value" => 'dui',
+            "catalog_type_id" => $documento->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Nit',
+            "value" => 'nit',
+            "catalog_type_id" => $documento->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Isss',
+            "value" => 'isss',
+            "catalog_type_id" => $documento->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Afp',
+            "value" => 'afp',
+            "catalog_type_id" => $documento->id,
+        ]);
     }
 }

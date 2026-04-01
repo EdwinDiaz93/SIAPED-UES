@@ -2,22 +2,29 @@
 
 use Livewire\Component;
 use App\Livewire\Forms\UserDataForm;
+use App\Livewire\Forms\DocumentDataForm;
 use App\Models\CatalogValue;
 use App\Models\User;
+use App\Models\Document;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
     //
+
     public UserDataForm $userForm;
+    public DocumentDataForm $documentForm;
+
+    public $mask = '';
+    public $document_type = 'dui';
+
     public $sexOptions = [];
     public $nacionalidades = [];
     public $estadosCiviles = [];
-    public $initValues = [];
+    public $documents = [];
 
     public function saveUser()
     {
-
         // actualzar usuario
         $user = User::find(auth()->user()->id);
         $this->userForm->validate();
@@ -34,10 +41,34 @@ new class extends Component {
         $this->dispatch('notify', type: 'success', message: 'Datos de usuario guardados correctamente');
     }
 
+    public function saveDocuments()
+    {
+        $this->documentForm->validate();
+
+        Document::create([
+            'user_id' => auth()->user()->id,
+            'document_type_id' => $this->documentForm->document_type,
+            'value' => $this->documentForm->value,
+            'fecha_expedicion' => $this->documentForm->fecha_expedicion,
+            'lugar_expedicion' => $this->documentForm->lugar_expedicion,
+            'fecha_expiracion' => $this->documentForm->fecha_expiracion,
+            'institucion' => $this->documentForm->institucion,
+        ]);
+
+        $this->dispatch('notify', type: 'success', message: 'Documentos de usuario guardados correctamente');
+        $this->documentForm->reset();
+    }
+
+    public function updatedDocumentFormDocumentType()
+    {
+        $document = CatalogValue::find($this->documentForm->document_type);
+        $this->document_type = $document->value;
+    }
 
     public function mount()
     {
-        $this->userForm = new UserDataForm($this, $this->initValues);
+        $this->userForm = new UserDataForm($this, []);
+        $this->documentForm = new DocumentDataForm($this, []);
 
         $user = User::find(auth()->user()->id);
         if ($user != null) {
@@ -56,13 +87,19 @@ new class extends Component {
         $this->nacionalidades = CatalogValue::where('catalog_type_id', 2)->get();
         $this->estadosCiviles = CatalogValue::where('catalog_type_id', 3)->get();
 
+        $this->documents = CatalogValue::where('catalog_type_id', 4)->get();
+
         $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->get();
         $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->get();
         $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->get();
 
+        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->get();
+
         $this->userForm->sexo = $sexOption[0]->id;
         $this->userForm->nacionalidad = $nacionalidad[0]->id;
         $this->userForm->estado_civil = $estadoCivil[0]->id;
+
+        $this->documentForm->document_type = $documento[0]->id;
     }
 };
 ?>
@@ -146,7 +183,7 @@ new class extends Component {
                             <label class="font-bold">Fecha Nacimiento:</label>
                             <input type="date" wire:model='userForm.fecha_nacimiento'
                                 class=" p-2 border rounded-lg border-ues w-full">
-                            @error('userForm.birth_date')
+                            @error('userForm.fecha_nacimiento')
                                 <span class="error">{{ $message }}</span>
                             @enderror
 
@@ -206,14 +243,90 @@ new class extends Component {
 
                     <div class="w-full mt-10">
 
-                        <button form="dataForm" class="p-2 w-60 bg-ues text-white border-white  cursor-pointer  font-bold border  rounded-lg  "
+                        <button form="dataForm"
+                            class="p-2 w-60 bg-ues text-white border-white  cursor-pointer  font-bold border  rounded-lg  "
                             type="submit">Guardar</button>
                     </div>
                 </form>
             </div>
             <div x-cloak x-show="selectedTab === 'documentos'" id="tabpanelLikes" role="tabpanel"
                 aria-label="documentos">
-                documentos
+                <form id="documentForm" wire:submit.prevent="saveDocuments" class="flex flex-col w-full">
+
+                    <div class="flex flex-row w-full">
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Tipo Documento:</label>
+
+
+                            <select wire:model.live='documentForm.document_type'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->documents as $document)
+                                    <option value={{ $document->id }}>{{ $document->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('documentForm.document_type')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+
+                        </div>
+                        <div x-data="{ document_type: @entangle('document_type').live }" class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Numero Documento :</label>
+                            <input
+                                x-mask:dynamic="
+                document_type === 'dui' ? '99999999-9' :
+                (document_type === 'nit' ? '9999-999999-999-9' : '')
+            "
+                                type="text" wire:model="documentForm.value"
+                                class=" p-2 border rounded-lg border-ues w-full">
+                            @error('documentForm.value')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="flex flex-col w-120 mx-1">
+                            <label class="font-bold">Fecha De Expedicion:</label>
+                            <input type="date" wire:model="documentForm.fecha_expedicion"
+                                class=" p-2 border rounded-lg border-ues w-full">
+                        </div>
+
+                        <div class="flex flex-col w-120 mx-1">
+                            <label class="font-bold">Lugar De Expedicion:</label>
+                            <input type="text" wire:model="documentForm.lugar_expedicion"
+                                class=" p-2 border rounded-lg border-ues w-full">
+                        </div>
+
+                    </div>
+
+                    <div class="flex flex-row w-full mt-6">
+                        <div class="flex flex-col w-120 mx-1">
+                            <label class="font-bold">Fecha De Expiracion:</label>
+                            <input type="date" wire:model="documentForm.fecha_expiracion"
+                                class=" p-2 border rounded-lg border-ues w-full">
+                        </div>
+
+
+
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Institucion:</label>
+
+                            <input type="text" wire:model='documentForm.institucion'
+                                class=" p-2 border rounded-lg border-ues w-full">
+
+                        </div>
+                        <div class="flex flex-col w-120 mx-1 ">
+
+                            <button form="documentForm"
+                                class="p-2 w-60 bg-ues text-white border-white  cursor-pointer  font-bold border  rounded-lg  mt-6"
+                                type="submit">Guardar</button>
+                        </div>
+
+                    </div>
+
+
+
+                </form>
             </div>
             <div x-cloak x-show="selectedTab === 'institucionales'" id="tabpanelComments" role="tabpanel"
                 aria-label="institucionales">

@@ -111,3 +111,7 @@ select:focus[data-flux-control] {
 .border-ues{
     @apply border-[#960000]
 }
+
+.error{
+    @apply text-red-500 font-light;
+}
