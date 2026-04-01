@@ -8,9 +8,11 @@ use App\Models\User;
 use App\Models\Document;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithPagination;
+use Livewire\Attributes\Computed;
 
 new class extends Component {
-    //
+    use WithPagination;
 
     public UserDataForm $userForm;
     public DocumentDataForm $documentForm;
@@ -65,6 +67,14 @@ new class extends Component {
         $this->document_type = $document->value;
     }
 
+    #[Computed]
+    public function userDocuments()
+    {
+        return Document::where('user_id', auth()->user()->id)
+            ->orderBy('id', 'desc')
+            ->paginate(5);
+    }
+
     public function mount()
     {
         $this->userForm = new UserDataForm($this, []);
@@ -86,19 +96,18 @@ new class extends Component {
         $this->sexOptions = CatalogValue::where('catalog_type_id', 1)->get();
         $this->nacionalidades = CatalogValue::where('catalog_type_id', 2)->get();
         $this->estadosCiviles = CatalogValue::where('catalog_type_id', 3)->get();
-
         $this->documents = CatalogValue::where('catalog_type_id', 4)->get();
 
         $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->get();
-        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->get();
-        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->get();
-
-        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->get();
-
         $this->userForm->sexo = $sexOption[0]->id;
+
+        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->get();
         $this->userForm->nacionalidad = $nacionalidad[0]->id;
+
+        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->get();
         $this->userForm->estado_civil = $estadoCivil[0]->id;
 
+        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->get();
         $this->documentForm->document_type = $documento[0]->id;
     }
 };
@@ -327,6 +336,43 @@ new class extends Component {
 
 
                 </form>
+                <div
+                    class="overflow-hidden w-full mt-5 overflow-x-auto rounded-radius border border-outline dark:border-outline-dark">
+                    <table class="w-full text-left text-sm text-on-surface dark:text-on-surface-dark">
+                        <thead
+                            class="border-b border-outline bg-surface-alt text-sm text-on-surface-strong dark:border-outline-dark dark:bg-surface-dark-alt dark:text-on-surface-dark-strong">
+                            <tr>
+                                <th scope="col" class="p-4">Tipo Document</th>
+                                <th scope="col" class="p-4">Numero Documento</th>
+                                <th scope="col" class="p-4">Fecha Expedicion</th>
+                                <th scope="col" class="p-4">Lugar Expedicion</th>
+                                <th scope="col" class="p-4">Fecha Expiracion</th>
+                                <th scope="col" class="p-4">Institucion</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline dark:divide-outline-dark">
+                            @forelse ($this->userDocuments as $document)
+                                <tr>
+                                    <td class="p-4">{{ $document->documentType->name }}</td>
+                                    <td class="p-4">{{ $document->value }}</td>
+                                    <td class="p-4">{{ $document->fecha_expedicion ?? '-' }}</td>
+                                    <td class="p-4">{{ $document->lugar_expedicion ?? '-' }}</td>
+                                    <td class="p-4">{{ $document->fecha_expiracion ?? '-' }}</td>
+                                    <td class="p-4">{{ $document->institucion ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="p-4">Records not found</td>
+
+                                </tr>
+                            @endforelse
+
+
+                        </tbody>
+                    </table>
+                    {{ $this->userDocuments->links() }}
+                </div>
+
             </div>
             <div x-cloak x-show="selectedTab === 'institucionales'" id="tabpanelComments" role="tabpanel"
                 aria-label="institucionales">
