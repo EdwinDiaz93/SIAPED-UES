@@ -22,7 +22,7 @@
                 @if (auth()->user()->can('account.details'))
                     <flux:sidebar.item icon="home" :href="route('account.details')"
                         :current="request()->routeIs('account.details')" wire:navigate>
-                        {{ __('Account Details') }}
+                        {{ __('Datos de cuenta') }}
                     </flux:sidebar.item>
                 @endif
             </flux:sidebar.group>

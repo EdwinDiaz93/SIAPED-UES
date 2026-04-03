@@ -9,7 +9,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
     Route::group(['middleware' => ['permission:account.details']], function () {
-        Route::livewire('/account/details',"pages::account_details")->name('account.details');
+        Route::livewire('/cuenta',"pages::account_details")->name('account.details');
     });
 });
 

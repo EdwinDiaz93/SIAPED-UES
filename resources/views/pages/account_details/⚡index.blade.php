@@ -3,6 +3,7 @@
 use Livewire\Component;
 use App\Livewire\Forms\UserDataForm;
 use App\Livewire\Forms\DocumentDataForm;
+use App\Livewire\Forms\InstitutionForm;
 use App\Models\CatalogValue;
 use App\Models\User;
 use App\Models\Document;
@@ -16,6 +17,7 @@ new class extends Component {
 
     public UserDataForm $userForm;
     public DocumentDataForm $documentForm;
+    public InstitutionForm $institutionForm;
 
     public $mask = '';
     public $document_type = 'dui';
@@ -61,6 +63,10 @@ new class extends Component {
         $this->documentForm->reset();
     }
 
+    public function saveInstitution(){
+        $this->institutionForm->validate();
+    }
+
     public function updatedDocumentFormDocumentType()
     {
         $document = CatalogValue::find($this->documentForm->document_type);
@@ -79,6 +85,7 @@ new class extends Component {
     {
         $this->userForm = new UserDataForm($this, []);
         $this->documentForm = new DocumentDataForm($this, []);
+        $this->institutionForm = new InstitutionForm($this, []);
 
         $user = User::find(auth()->user()->id);
         if ($user != null) {
@@ -376,7 +383,113 @@ new class extends Component {
             </div>
             <div x-cloak x-show="selectedTab === 'institucionales'" id="tabpanelComments" role="tabpanel"
                 aria-label="institucionales">
-                institucionales
+                <form id="institutionForm" wire:submit.prevent="saveInstitution" class="flex flex-col w-full">
+
+                    <div class="flex flex-row w-full">
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Grado Academico:</label>
+                             <select wire:model='institutionForm.grado_academico'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->nacionalidades as $nacionalidad)
+                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.grado_academico')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+
+                        </div>
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Institucion donde se graduo:</label>
+                             <select wire:model='institutionForm.institucion_educativa'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->nacionalidades as $nacionalidad)
+                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.institucion_educativa')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+
+                        <div class="flex flex-col w-120 mx-1">
+                            <label class="font-bold">Fecha Graduacion:</label>
+
+                            <input type="date" wire:model='institutionForm.fecha_graducacion'
+                                class=" p-2 border rounded-lg border-ues w-full">
+                            @error('institutionForm.fecha_graducacion')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+
+
+                    </div>
+
+                    <div class="flex flex-row w-full mt-5">
+
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Escuela o unidad a la que pertenece:</label>
+                             <select wire:model='institutionForm.escuela_unidad'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->nacionalidades as $nacionalidad)
+                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.escuela_unidad')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+
+                        </div>
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Categoria escalafonaria:</label>
+
+                            <select wire:model='institutionForm.categoria_escalafonaria'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->nacionalidades as $nacionalidad)
+                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.categoria_escalafonaria')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Area de desempeño:</label>
+
+                            <select wire:model='institutionForm.area_desempeño'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->estadosCiviles as $estadoCivil)
+                                    <option value={{ $estadoCivil->id }}>{{ $estadoCivil->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--No Option--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.area_desempeño')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="w-full mt-10">
+
+                        <button form="institutionForm"
+                            class="p-2 w-60 bg-ues text-white border-white  cursor-pointer  font-bold border  rounded-lg  "
+                            type="submit">Guardar</button>
+                    </div>
+                </form>
             </div>
 
         </div>
