@@ -7,6 +7,7 @@ use App\Livewire\Forms\InstitutionForm;
 use App\Models\CatalogValue;
 use App\Models\User;
 use App\Models\Document;
+use App\Models\Institution;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
@@ -26,6 +27,12 @@ new class extends Component {
     public $nacionalidades = [];
     public $estadosCiviles = [];
     public $documents = [];
+
+    public $gradosAcademicos = [];
+    public $institucionesEducativas = [];
+    public $escuelas = [];
+    public $categoriasEscalafonarias = [];
+    public $areasDeDesempeño = [];
 
     public function saveUser()
     {
@@ -63,8 +70,30 @@ new class extends Component {
         $this->documentForm->reset();
     }
 
-    public function saveInstitution(){
+    public function saveInstitution()
+    {
         $this->institutionForm->validate();
+        $institution = Institution::where('user_id', auth()->user()->id)->first();
+        if ($institution == null) {
+            Institution::create([
+                'user_id' => auth()->user()->id,
+                'grado_id' => $this->institutionForm->grado_academico,
+                'institucion_id' => $this->institutionForm->institucion_educativa,
+                'escuela_id' => $this->institutionForm->escuela_unidad,
+                'categoria_id' => $this->institutionForm->categoria_escalafonaria,
+                'area_id' => $this->institutionForm->area_desempeño,
+                'fecha_graduacion' => $this->institutionForm->fecha_graduacion,
+            ]);
+        } else {
+            $institution->grado_id = $this->institutionForm->grado_academico;
+            $institution->institucion_id = $this->institutionForm->institucion_educativa;
+            $institution->escuela_id = $this->institutionForm->escuela_unidad;
+            $institution->categoria_id = $this->institutionForm->categoria_escalafonaria;
+            $institution->area_id = $this->institutionForm->area_desempeño;
+            $institution->fecha_graduacion = $this->institutionForm->fecha_graduacion;
+            $institution->save();
+        }
+        $this->dispatch('notify', type: 'success', message: 'Datos institucionales guardados correctamente');
     }
 
     public function updatedDocumentFormDocumentType()
@@ -87,6 +116,44 @@ new class extends Component {
         $this->documentForm = new DocumentDataForm($this, []);
         $this->institutionForm = new InstitutionForm($this, []);
 
+        // inicializar catalogos
+
+        $this->sexOptions = CatalogValue::where('catalog_type_id', 1)->get();
+        $this->nacionalidades = CatalogValue::where('catalog_type_id', 2)->get();
+        $this->estadosCiviles = CatalogValue::where('catalog_type_id', 3)->get();
+        $this->documents = CatalogValue::where('catalog_type_id', 4)->get();
+
+        $this->gradosAcademicos = CatalogValue::where('catalog_type_id', 5)->get();
+        $this->institucionesEducativas = CatalogValue::where('catalog_type_id', 6)->get();
+        $this->escuelas = CatalogValue::where('catalog_type_id', 7)->get();
+        $this->categoriasEscalafonarias = CatalogValue::where('catalog_type_id', 8)->get();
+        $this->areasDeDesempeño = CatalogValue::where('catalog_type_id', 9)->get();
+
+        $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
+        $this->userForm->sexo = $sexOption->id;
+
+        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->first();
+        $this->userForm->nacionalidad = $nacionalidad->id;
+
+        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->first();
+        $this->userForm->estado_civil = $estadoCivil->id;
+
+        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->first();
+        $this->documentForm->document_type = $documento->id;
+
+        $gradoAcademico = CatalogValue::where(['catalog_type_id' => 5, 'value' => 'ingeniería'])->first();
+        $institucionEducativa = CatalogValue::where(['catalog_type_id' => 6, 'value' => 'ues'])->first();
+        $escuela = CatalogValue::where(['catalog_type_id' => 7, 'value' => 'I10515'])->first();
+        $categoriaEscalafonaria = CatalogValue::where(['catalog_type_id' => 8, 'value' => 'pu-i'])->first();
+        $areaDeDesempeño = CatalogValue::where(['catalog_type_id' => 9, 'value' => 'docencia'])->first();
+
+        $this->institutionForm->grado_academico = $gradoAcademico->id;
+        $this->institutionForm->institucion_educativa = $institucionEducativa->id;
+        $this->institutionForm->escuela_unidad = $escuela->id;
+        $this->institutionForm->categoria_escalafonaria = $categoriaEscalafonaria->id;
+        $this->institutionForm->area_desempeño = $areaDeDesempeño->id;
+
+        // cargar data si ya se habia guardado
         $user = User::find(auth()->user()->id);
         if ($user != null) {
             $this->userForm->nombres = $user->name;
@@ -100,22 +167,15 @@ new class extends Component {
             $this->userForm->telefono = $user->telefono;
         }
 
-        $this->sexOptions = CatalogValue::where('catalog_type_id', 1)->get();
-        $this->nacionalidades = CatalogValue::where('catalog_type_id', 2)->get();
-        $this->estadosCiviles = CatalogValue::where('catalog_type_id', 3)->get();
-        $this->documents = CatalogValue::where('catalog_type_id', 4)->get();
-
-        $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->get();
-        $this->userForm->sexo = $sexOption[0]->id;
-
-        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->get();
-        $this->userForm->nacionalidad = $nacionalidad[0]->id;
-
-        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->get();
-        $this->userForm->estado_civil = $estadoCivil[0]->id;
-
-        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->get();
-        $this->documentForm->document_type = $documento[0]->id;
+        $userInstitucion = Institution::where('user_id', auth()->user()->id)->first();
+        if ($userInstitucion != null) {
+            $this->institutionForm->grado_academico = $userInstitucion->grado_id;
+            $this->institutionForm->institucion_educativa = $userInstitucion->institucion_id;
+            $this->institutionForm->escuela_unidad = $userInstitucion->escuela_id;
+            $this->institutionForm->categoria_escalafonaria = $userInstitucion->categoria_id;
+            $this->institutionForm->area_desempeño = $userInstitucion->area_id;
+            $this->institutionForm->fecha_graduacion = $userInstitucion->fecha_graduacion;
+        }
     }
 };
 ?>
@@ -388,10 +448,10 @@ new class extends Component {
                     <div class="flex flex-row w-full">
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Grado Academico:</label>
-                             <select wire:model='institutionForm.grado_academico'
+                            <select wire:model='institutionForm.grado_academico'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
-                                @forelse ($this->nacionalidades as $nacionalidad)
-                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @forelse ($this->gradosAcademicos as $gradoAcademico)
+                                    <option value={{ $gradoAcademico->id }}>{{ $gradoAcademico->name }}</option>
                                 @empty
                                     <option value={{ null }}>--No Option--</option>
                                 @endforelse
@@ -403,10 +463,10 @@ new class extends Component {
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Institucion donde se graduo:</label>
-                             <select wire:model='institutionForm.institucion_educativa'
+                            <select wire:model='institutionForm.institucion_educativa'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
-                                @forelse ($this->nacionalidades as $nacionalidad)
-                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @forelse ($this->institucionesEducativas as $institucion)
+                                    <option value={{ $institucion->id }}>{{ $institucion->name }}</option>
                                 @empty
                                     <option value={{ null }}>--No Option--</option>
                                 @endforelse
@@ -420,9 +480,9 @@ new class extends Component {
                         <div class="flex flex-col w-120 mx-1">
                             <label class="font-bold">Fecha Graduacion:</label>
 
-                            <input type="date" wire:model='institutionForm.fecha_graducacion'
+                            <input type="date" wire:model='institutionForm.fecha_graduacion'
                                 class=" p-2 border rounded-lg border-ues w-full">
-                            @error('institutionForm.fecha_graducacion')
+                            @error('institutionForm.fecha_graduacion')
                                 <span class="error">{{ $message }}</span>
                             @enderror
                         </div>
@@ -435,10 +495,10 @@ new class extends Component {
 
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Escuela o unidad a la que pertenece:</label>
-                             <select wire:model='institutionForm.escuela_unidad'
+                            <select wire:model='institutionForm.escuela_unidad'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
-                                @forelse ($this->nacionalidades as $nacionalidad)
-                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @forelse ($this->escuelas as $escuela)
+                                    <option value={{ $escuela->id }}>{{ $escuela->name }}</option>
                                 @empty
                                     <option value={{ null }}>--No Option--</option>
                                 @endforelse
@@ -453,8 +513,8 @@ new class extends Component {
 
                             <select wire:model='institutionForm.categoria_escalafonaria'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
-                                @forelse ($this->nacionalidades as $nacionalidad)
-                                    <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
+                                @forelse ($this->categoriasEscalafonarias as $categoria)
+                                    <option value={{ $categoria->id }}>{{ $categoria->name }}</option>
                                 @empty
                                     <option value={{ null }}>--No Option--</option>
                                 @endforelse
@@ -468,8 +528,8 @@ new class extends Component {
 
                             <select wire:model='institutionForm.area_desempeño'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
-                                @forelse ($this->estadosCiviles as $estadoCivil)
-                                    <option value={{ $estadoCivil->id }}>{{ $estadoCivil->name }}</option>
+                                @forelse ($this->areasDeDesempeño as $areaDesempeño)
+                                    <option value={{ $areaDesempeño->id }}>{{ $areaDesempeño->name }}</option>
                                 @empty
                                     <option value={{ null }}>--No Option--</option>
                                 @endforelse

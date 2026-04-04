@@ -12,7 +12,7 @@ class InstitutionForm extends Form
     #[Validate('required', message: 'El campo  institucion es requerido')]
     public $institucion_educativa = null;
     #[Validate('required', message: 'El campo fecha graduacion es requerido')]
-    public $fecha_graducacion = null;
+    public $fecha_graduacion = null;
     #[Validate('required', message: 'El campo escuela o unidad es requerido')]
     public $escuela_unidad = null;
     #[Validate('required', message: 'El campo categoria escalafonaria es requerido')]

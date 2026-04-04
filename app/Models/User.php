@@ -60,6 +60,11 @@ class User extends Authenticatable
             ->implode('');
     }
 
+    public function institution()
+    {
+        return $this->hasOne(Institution::class);
+    }
+
     public function documents()
     {
         return $this->hasMany(Document::class);

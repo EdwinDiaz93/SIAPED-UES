@@ -137,6 +137,11 @@ class CatalogSeeder extends Seeder
 
         $instituciones = CatalogType::create(["name" => "Instituciones Educativas", "value" => "Instituciones Educativas"]);
         CatalogValue::create([
+            'name' => 'Universidad De El Salvador (UES)',
+            "value" => 'ues',
+            "catalog_type_id" => $instituciones->id,
+        ]);
+        CatalogValue::create([
             'name' => 'Universidad Centroamericana “José Simeón Cañas” (UCA)',
             "value" => 'uca',
             "catalog_type_id" => $instituciones->id,
@@ -256,13 +261,6 @@ class CatalogSeeder extends Seeder
         ]);
 
 
-        $escuelas = CatalogType::create(["name" => "Escuelas", "value" => "Escuelas"]);
-
-        CatalogValue::create([
-            'name' => 'Escuela De Ingenieria De Sistemas',
-            "value" => 'I10515',
-            "catalog_type_id" => $escuelas->id,
-        ]);
 
         $categoria_escalafonaria = CatalogType::create(["name" => "Categoria Escalafonaria", "value" => "Categoria Escalafonaria"]);
 
