@@ -20,10 +20,18 @@
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
                 @if (auth()->user()->can('account.details'))
-                    <flux:sidebar.item icon="home" :href="route('account.details')"
-                        :current="request()->routeIs('account.details')" wire:navigate>
-                        {{ __('Datos de cuenta') }}
-                    </flux:sidebar.item>
+                    @can('account.details')
+                        <flux:sidebar.item icon="home" :href="route('account.details')"
+                            :current="request()->routeIs('account.details')" wire:navigate>
+                            {{ __('Datos de cuenta') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.users')
+                        <flux:sidebar.item icon="user" :href="route('manage.users')"
+                            :current="request()->routeIs('manage.users')" wire:navigate>
+                            {{ __('Administrar Usuarios') }}
+                        </flux:sidebar.item>
+                    @endcan
                 @endif
             </flux:sidebar.group>
         </flux:sidebar.nav>

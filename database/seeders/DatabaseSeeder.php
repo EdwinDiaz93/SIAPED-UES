@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -17,9 +18,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $adminUser = User::factory()->create([
+            'name' => 'Admin',
+            'email' => 'admin@ues.edu.sv',
+            'password' => Hash::make('admin')
         ]);
 
         $admin = Role::create(([
@@ -39,6 +41,12 @@ class DatabaseSeeder extends Seeder
         // permissos para el rol inactivo
         $account_details = Permission::create(["name" => "account.details"]);
         $inactivo->givePermissionTo([$account_details]);
+
+        $manageUsers = Permission::create(['name' => 'manage.users']);
+
+        $admin->givePermissionTo([$manageUsers, $account_details]);
+
+        $adminUser->assignRole([$admin]);
 
         $this->call(CatalogSeeder::class);
     }
