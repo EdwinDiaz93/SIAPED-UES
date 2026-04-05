@@ -35,6 +35,7 @@ new class extends Component {
                         <td class="p-4 text-center">{{ $user->apellidos ?? '-'}}</td>
                         <td class="p-4 text-center">{{ $user->email ?? '-'}}</td>
                         <td class="p-4 text-center">{{ $user->telefono ?? '-'}}</td>
+                        <td></td>
                     </tr>
                 @empty
                     <tr class="p-4">
