@@ -10,7 +10,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::livewire('/cuenta', "pages::account_details")->middleware('permission:account.details')->name('account.details');
-    Route::livewire('/usuarios', "pages::users")->middleware('permission:manage.users')->name('manage.users');
+    Route::livewire('/usuarios', "pages::users.index")->middleware('permission:manage.users')->name('manage.users');
+    Route::livewire('/usuarios/informacion', "pages::users.info")->middleware('permission:manage.users')->name('users.info');
 });
 
 require __DIR__ . '/settings.php';

@@ -1,0 +1,203 @@
+<?php
+
+use Livewire\Component;
+use Livewire\Attributes\Url;
+use Livewire\Attributes\Validate;
+use App\Models\User;
+use App\Models\Document;
+use Livewire\WithPagination;
+
+new class extends Component {
+    use WithPagination;
+
+    #[Url]
+    #[Validate('required|integer|exists:users,id')]
+    public $id;
+
+    public $usuario = null;
+
+    public function mount()
+    {
+        // 1. Validamos manualmente para poder controlar el fallo
+        $validador = validator(
+            ['id' => $this->id],
+            [
+                'id' => 'required|integer|exists:users,id',
+            ],
+        );
+
+        // 2. Ahora sí existe la variable $validador
+        if ($validador->fails()) {
+            $this->dispatch('notify', type: 'error', message: 'Usuario no existe');
+        } else {
+            $this->usuario = User::find($this->id);
+        }
+    }
+
+    public function returnBack()
+    {
+        return $this->redirectRoute('manage.users');
+    }
+};
+?>
+
+<div>
+    <div class="w-full flex justify-between">
+        <h2><button class="p-2 bg-ues flex text-white rounded-lg cursor-pointer" wire:click="returnBack">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+
+                <span class="ml-3"> Administrar Usuairos</span>
+            </button></h2>
+
+        <h2><button class="p-2 bg-ues flex text-white rounded-lg cursor-pointer" wire:click="returnBack">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                </svg>
+
+                <span class="ml-3"> Aprobar Usuario</span>
+            </button></h2>
+    </div>
+
+
+    <h3 class="text-4xl flex  items-center mt-4"> <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+        </svg>
+        <span class="font-bold ml-3">Informacion </span>
+    </h3>
+
+    <div class="grid grid-cols-3 gap-4 shadow-xl p-4 rounded-xl ">
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Nombres:</label>
+            <p>{{ $this->usuario->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Apellidos:</label>
+            <p>{{ $this->usuario->apellidos }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Sexo:</label>
+            <p>{{ $this->usuario->selectedSex->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Fecha De Nacimiento:</label>
+            <p>{{ $this->usuario->fecha_nacimiento }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Nacionalidad:</label>
+            <p>{{ $this->usuario->selectedNacionalidad->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Estado Civil:</label>
+            <p>{{ $this->usuario->estadoCivil->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Conyugue:</label>
+            <p>{{ $this->usuario->conyugue }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Direccion:</label>
+            <p>{{ strlen($this->usuario->direccion) > 0 ? $this->usuario->direccion : '-' }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Telefono:</label>
+            <p>{{ $this->usuario->telefono }}</p>
+        </div>
+    </div>
+
+
+    <h3 class="text-4xl flex  items-center mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+        </svg>
+
+        <span class="font-bold ml-3">Documentos </span>
+    </h3>
+
+    <div class="grid grid-cols-1   shadow-xl p-4 rounded-xl ">
+        <div
+            class="overflow-hidden w-full mt-5 overflow-x-auto rounded-radius border border-outline dark:border-outline-dark">
+            <table class="w-full text-left text-sm text-on-surface dark:text-on-surface-dark">
+                <thead
+                    class="border-b bg-ues text-white text-sm  dark:border-outline-dark dark:bg-surface-dark-alt dark:text-on-surface-dark-strong">
+                    <tr>
+                        <th scope="col" class="p-4">Tipo Document</th>
+                        <th scope="col" class="p-4">Numero Documento</th>
+                        <th scope="col" class="p-4">Fecha Expedicion</th>
+                        <th scope="col" class="p-4">Lugar Expedicion</th>
+                        <th scope="col" class="p-4">Fecha Expiracion</th>
+                        <th scope="col" class="p-4">Institucion</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline dark:divide-outline-dark">
+                    @forelse ($this->usuario->documents as $document)
+                        <tr>
+                            <td class="p-4">{{ $document->documentType->name }}</td>
+                            <td class="p-4">{{ $document->value }}</td>
+                            <td class="p-4">{{ $document->fecha_expedicion ?? '-' }}</td>
+                            <td class="p-4">{{ $document->lugar_expedicion ?? '-' }}</td>
+                            <td class="p-4">{{ $document->fecha_expiracion ?? '-' }}</td>
+                            <td class="p-4">{{ $document->institucion ?? '-' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="p-4">Records not found</td>
+
+                        </tr>
+                    @endforelse
+
+
+                </tbody>
+            </table>
+            {{-- {{ $this->userDocuments->links() }} --}}
+        </div>
+    </div>
+
+    <h3 class="text-4xl flex  items-center mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+        </svg>
+
+
+        <span class="font-bold ml-3">Datos Academicos </span>
+    </h3>
+
+    <div class="grid grid-cols-3 gap-4 shadow-xl p-4 rounded-xl ">
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Grado Academico:</label>
+            <p>{{ $this->usuario->institution->grado->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Institucion:</label>
+            <p>{{ $this->usuario->institution->institucion->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Fecha De Graduacion:</label>
+            <p>{{ $this->usuario->institution->fecha_graduacion }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Escuela o Unidad:</label>
+            <p>{{ $this->usuario->institution->escuela->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Categoria Escalafonaria:</label>
+            <p>{{ $this->usuario->institution->categoria->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Area de desempeño:</label>
+            <p>{{ $this->usuario->institution->area->name }}</p>
+        </div>
+
+    </div>
+
+</div>

@@ -69,4 +69,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(Document::class);
     }
+
+    public function estadoCivil()
+    {
+        return $this->belongsTo(CatalogValue::class, 'estado_civil');
+    }
+    public function selectedSex()
+    {
+        return $this->belongsTo(CatalogValue::class, 'sexo');
+    }
+    public function selectedNacionalidad()
+    {
+        return $this->belongsTo(CatalogValue::class, 'nacionalidad');
+    }
 }
