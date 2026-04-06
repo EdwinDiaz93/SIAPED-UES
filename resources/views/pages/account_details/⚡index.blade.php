@@ -36,9 +36,11 @@ new class extends Component {
 
     public function saveUser()
     {
-        // actualzar usuario
+        // actualizar usuario
         $user = User::find(auth()->user()->id);
+
         $this->userForm->validate();
+
         $user->name = $this->userForm->nombres;
         $user->apellidos = $this->userForm->apellidos;
         $user->fecha_nacimiento = $this->userForm->fecha_nacimiento;
@@ -49,6 +51,7 @@ new class extends Component {
         $user->direccion = $this->userForm->direccion;
         $user->telefono = $this->userForm->telefono;
         $user->save();
+
         $this->dispatch('notify', type: 'success', message: 'Datos de usuario guardados correctamente');
     }
 
@@ -130,8 +133,8 @@ new class extends Component {
         $this->areasDeDesempeño = CatalogValue::where('catalog_type_id', 9)->get();
 
         $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
-        $this->userForm->sexo = $sexOption->id;
 
+        $this->userForm->sexo = $sexOption->id;
         $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->first();
         $this->userForm->nacionalidad = $nacionalidad->id;
 
@@ -158,10 +161,10 @@ new class extends Component {
         if ($user != null) {
             $this->userForm->nombres = $user->name;
             $this->userForm->apellidos = $user->apellidos;
-            $this->userForm->sexo = $user->sexo;
+            $this->userForm->sexo = $user->sexo ?? $sexOption->id;
             $this->userForm->fecha_nacimiento = $user->fecha_nacimiento;
-            $this->userForm->nacionalidad = $user->nacionalidad;
-            $this->userForm->estado_civil = $user->estado_civil;
+            $this->userForm->nacionalidad = $user->nacionalidad ?? $nacionalidad->id;
+            $this->userForm->estado_civil = $user->estado_civil ?? $estadoCivil->id;
             $this->userForm->conyugue = $user->conyugue;
             $this->userForm->direccion = $user->direccion;
             $this->userForm->telefono = $user->telefono;
@@ -212,7 +215,7 @@ new class extends Component {
         <div class="px-2 py-4 text-on-surface dark:text-on-surface-dark">
             <div x-cloak x-show="selectedTab === 'personales'" id="tabpanelGroups" role="tabpanel"
                 aria-label="personales">
-                <form id="dataForm" wire:submit.prevent="saveUser" class="flex flex-col w-full">
+                <form id="dataForm" wire:submit="saveUser" class="flex flex-col w-full">
 
                     <div class="flex flex-row w-full">
                         <div class="flex flex-col w-120 mx-1 ">
@@ -303,16 +306,23 @@ new class extends Component {
                             <label class="font-bold">Conyugue:</label>
                             <input wire:model='userForm.conyugue' type="text"
                                 class=" p-2 border rounded-lg border-ues w-full">
+
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Direccion:</label>
                             <input wire:model='userForm.direccion' type="text"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('userForm.direccion')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Telefono:</label>
                             <input x-mask="9999-9999" wire:model='userForm.telefono' type="text"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('userForm.telefono')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
 
                     </div>

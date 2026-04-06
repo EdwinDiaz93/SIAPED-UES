@@ -6,6 +6,8 @@ use Livewire\Attributes\Validate;
 use App\Models\User;
 use App\Models\Document;
 use Livewire\WithPagination;
+use App\Mail\ApproveMail;
+use Illuminate\Support\Facades\Mail;
 
 new class extends Component {
     use WithPagination;
@@ -34,6 +36,12 @@ new class extends Component {
         }
     }
 
+    public function approveUser()
+    {
+        Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
+        return $this->redirectRoute('manage.users');
+    }
+
     public function returnBack()
     {
         return $this->redirectRoute('manage.users');
@@ -52,7 +60,7 @@ new class extends Component {
                 <span class="ml-3"> Administrar Usuairos</span>
             </button></h2>
 
-        <h2><button class="p-2 bg-ues flex text-white rounded-lg cursor-pointer" wire:click="returnBack">
+        <h2><button class="p-2 bg-ues flex text-white rounded-lg cursor-pointer" wire:click="approveUser">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-6">
                     <path stroke-linecap="round" stroke-linejoin="round"
