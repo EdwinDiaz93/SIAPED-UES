@@ -62,6 +62,12 @@
                             {{ __('Reportes') }}
                         </flux:sidebar.item>
                     @endcan
+                    @can('manage.promociones')
+                        <flux:sidebar.item icon="arrow-trending-up" :href="route('promociones')"
+                            :current="request()->routeIs('promociones')" wire:navigate>
+                            {{ __('Promociones') }}
+                        </flux:sidebar.item>
+                    @endcan
                 @endif
             </flux:sidebar.group>
         </flux:sidebar.nav>

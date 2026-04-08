@@ -6,35 +6,66 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Ejecutar en instancias existentes para sincronizar permisos:
+ *   php artisan db:seed --class=PermisosSeeder
+ */
 class PermisosSeeder extends Seeder
 {
     public function run(): void
     {
-        // Permisos
-        $periodos     = Permission::firstOrCreate(['name' => 'manage.periodos']);
-        $evalAdmin    = Permission::firstOrCreate(['name' => 'manage.evaluaciones']);
-        $evalJefe     = Permission::firstOrCreate(['name' => 'fill.cuestionario.jefe']);
-        $evalDocente  = Permission::firstOrCreate(['name' => 'fill.cuestionario.auto']);
-        $credenciales = Permission::firstOrCreate(['name' => 'fill.credenciales']);
-        $reportes     = Permission::firstOrCreate(['name' => 'manage.reportes']);
+        $permisos = [
+            'account.details',
+            'manage.users',
+            'manage.periodos',
+            'manage.evaluaciones',
+            'manage.reportes',
+            'manage.promociones',
+            'fill.cuestionario.jefe',
+            'fill.cuestionario.auto',
+            'fill.credenciales',
+            'solicitar.promocion',
+        ];
+
+        foreach ($permisos as $nombre) {
+            Permission::firstOrCreate(['name' => $nombre]);
+        }
 
         $admin   = Role::where('name', 'admin')->first();
         $jefe    = Role::where('name', 'Jefe')->first();
         $docente = Role::where('name', 'docente')->first();
+        $inactivo= Role::where('name', 'inactivo')->first();
 
         if ($admin) {
-            $admin->givePermissionTo([$periodos, $evalAdmin]);
+            $admin->syncPermissions([
+                'account.details',
+                'manage.users',
+                'manage.periodos',
+                'manage.evaluaciones',
+                'manage.reportes',
+                'manage.promociones',
+                'fill.credenciales',
+            ]);
         }
-        if ($jefe) {
-            $jefe->givePermissionTo([$evalJefe]);
-        }
+
         if ($docente) {
-            $docente->givePermissionTo([$evalDocente, $credenciales]);
+            $docente->syncPermissions([
+                'account.details',
+                'fill.cuestionario.auto',
+                'fill.credenciales',
+                'solicitar.promocion',
+            ]);
         }
 
-        // Admin también puede ver/gestionar credenciales y reportes
-        if ($admin) {
-            $admin->givePermissionTo([$credenciales, $reportes]);
+        if ($jefe) {
+            $jefe->syncPermissions([
+                'account.details',
+                'fill.cuestionario.jefe',
+            ]);
+        }
+
+        if ($inactivo) {
+            $inactivo->syncPermissions(['account.details']);
         }
     }
 }

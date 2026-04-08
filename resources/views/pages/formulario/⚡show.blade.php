@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Url;
 use App\Models\PeriodoEvaluacion;
 use App\Models\FormularioConsolidado;
+use App\Models\SolicitudPromocion;
 use App\Services\PuntajeEscalafonarioCalculator;
 use Spatie\Permission\Models\Role;
 
@@ -15,9 +16,11 @@ new class extends Component {
     #[Url]
     public ?int $periodoId = null;
 
-    public ?array $resultado   = null;
-    public ?int   $guardadoId  = null;
-    public bool   $generado    = false;
+    public ?array $resultado      = null;
+    public ?int   $guardadoId    = null;
+    public bool   $generado      = false;
+    public bool   $yaSolicito    = false;
+    public bool   $puedesSolicitar = false;
 
     public function mount()
     {
@@ -35,6 +38,45 @@ new class extends Component {
         );
         $this->generado  = true;
         $this->guardadoId = null;
+
+        // Verificar si puede solicitar promoción
+        $this->puedesSolicitar = $this->resultado['cumple_ascenso']
+            && $this->resultado['siguiente_categoria'] !== null;
+
+        // Verificar si ya tiene una solicitud pendiente
+        $this->yaSolicito = SolicitudPromocion::where('docente_id', $this->docenteId)
+            ->where('estado', 'pendiente')
+            ->exists();
+    }
+
+    public function solicitarPromocion()
+    {
+        if (!$this->resultado || !$this->resultado['cumple_ascenso']) return;
+
+        if ($this->yaSolicito) {
+            $this->dispatch('notify', type: 'error', message: 'Ya tiene una solicitud de promoción pendiente.');
+            return;
+        }
+
+        // Guardar snapshot si no existe aún
+        if (!$this->guardadoId) {
+            $this->guardarFormulario();
+        }
+
+        SolicitudPromocion::create([
+            'docente_id'          => $this->docenteId,
+            'periodo_id'          => $this->periodoId ?: null,
+            'formulario_id'       => $this->guardadoId,
+            'categoria_actual'    => $this->resultado['categoria_actual'],
+            'categoria_solicitada'=> $this->resultado['siguiente_categoria'],
+            'puntaje_obtenido'    => $this->resultado['total_ganado'],
+            'puntaje_requerido'   => $this->resultado['total_maximo'],
+            'estado'              => 'pendiente',
+        ]);
+
+        $this->yaSolicito = true;
+        $this->dispatch('notify', type: 'success',
+            message: 'Solicitud de promoción enviada. El administrador la revisará próximamente.');
     }
 
     public function guardarFormulario()
@@ -339,6 +381,29 @@ new class extends Component {
 
         @if ($guardadoId)
             <p class="text-xs text-green-600 print:hidden">✓ Formulario guardado como snapshot (ID #{{ $guardadoId }})</p>
+        @endif
+
+        {{-- Botón solicitar promoción --}}
+        @if ($puedesSolicitar)
+            <div class="mt-4 print:hidden">
+                @if ($yaSolicito)
+                    <div class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gray-100 border border-gray-300 text-gray-600 text-sm font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        Solicitud de promoción pendiente de revisión
+                    </div>
+                @else
+                    <button wire:click="solicitarPromocion"
+                        wire:confirm="¿Confirma que desea solicitar la promoción a {{ $resultado['siguiente_categoria'] }}? Se notificará al administrador."
+                        class="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl cursor-pointer font-semibold hover:bg-green-700 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                        </svg>
+                        Solicitar Promoción a {{ $resultado['siguiente_categoria'] }}
+                    </button>
+                @endif
+            </div>
         @endif
     @else
         <div class="flex items-center justify-center h-48 border border-dashed border-outline rounded-xl text-gray-400">

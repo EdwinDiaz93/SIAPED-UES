@@ -38,13 +38,44 @@ class DatabaseSeeder extends Seeder
             "name" => "Jefe"
         ]));
 
-        // permissos para el rol inactivo
-        $account_details = Permission::create(["name" => "account.details"]);
-        $inactivo->givePermissionTo([$account_details]);
+        // ── Permisos base ─────────────────────────────────────────────────────
+        $account_details  = Permission::create(['name' => 'account.details']);
+        $manageUsers      = Permission::create(['name' => 'manage.users']);
+        $managePeriodos   = Permission::create(['name' => 'manage.periodos']);
+        $manageEval       = Permission::create(['name' => 'manage.evaluaciones']);
+        $manageReportes   = Permission::create(['name' => 'manage.reportes']);
+        $manageProm       = Permission::create(['name' => 'manage.promociones']);
+        $fillJefe         = Permission::create(['name' => 'fill.cuestionario.jefe']);
+        $fillAuto         = Permission::create(['name' => 'fill.cuestionario.auto']);
+        $fillCred         = Permission::create(['name' => 'fill.credenciales']);
+        $solicitarProm    = Permission::create(['name' => 'solicitar.promocion']);
 
-        $manageUsers = Permission::create(['name' => 'manage.users']);
+        // ── Asignación de permisos por rol ────────────────────────────────────
+        $admin->givePermissionTo([
+            $account_details,
+            $manageUsers,
+            $managePeriodos,
+            $manageEval,
+            $manageReportes,
+            $manageProm,
+            $fillCred,
+        ]);
 
-        $admin->givePermissionTo([$manageUsers, $account_details]);
+        $docente->givePermissionTo([
+            $account_details,
+            $fillAuto,
+            $fillCred,
+            $solicitarProm,
+        ]);
+
+        $jefeInmediato->givePermissionTo([
+            $account_details,
+            $fillJefe,
+        ]);
+
+        $inactivo->givePermissionTo([
+            $account_details,
+        ]);
 
         $adminUser->assignRole([$admin]);
 
