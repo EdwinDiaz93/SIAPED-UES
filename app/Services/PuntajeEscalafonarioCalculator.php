@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\CredencialCapacitacion;
+use App\Models\CredencialProyeccionSocial;
+use App\Models\CredencialEspecializacion;
+use App\Models\CredencialInvestigacion;
+use App\Models\CredencialSeguimiento;
+use App\Models\Evaluacion;
+use App\Models\User;
+
+class PuntajeEscalafonarioCalculator
+{
+    /**
+     * Puntajes máximos por aspecto y categoría (Art. 45 Reglamento Escalafón).
+     * PU-I accede por concurso, no por puntaje.
+     */
+    public const MAXIMOS = [
+        'pu-ii' => [
+            'labor_academica'   => 10,
+            'tiempo_servicio'   => 4,
+            'capacitacion'      => 3,
+            'proyeccion_social' => 3,
+            'especializacion'   => 2,
+            'investigacion'     => 1,
+            'seguimiento'       => 2,
+            'total'             => 25,
+        ],
+        'pu-iii' => [
+            'labor_academica'   => 20,
+            'tiempo_servicio'   => 8,
+            'capacitacion'      => 6,
+            'proyeccion_social' => 6,
+            'especializacion'   => 8,
+            'investigacion'     => 5,
+            'seguimiento'       => 4,
+            'total'             => 57,
+        ],
+        'pu-iv' => [
+            'labor_academica'   => 30,
+            'tiempo_servicio'   => 12,
+            'capacitacion'      => 8,
+            'proyeccion_social' => 9,
+            'especializacion'   => 12,
+            'investigacion'     => 9,
+            'seguimiento'       => 6,
+            'total'             => 86,
+        ],
+    ];
+
+    /**
+     * Calcula el puntaje completo de los 7 aspectos escalafonarios para un docente.
+     *
+     * @return array{
+     *   docente: User,
+     *   categoria_actual: string,
+     *   aspectos: array,
+     *   total_ganado: float,
+     *   maximos_categoria: array,
+     *   siguiente_categoria: string|null,
+     *   puntaje_para_ascenso: float|null,
+     *   cumple_ascenso: bool,
+     *   periodo_id: int|null,
+     * }
+     */
+    public static function calcular(int $docenteId, ?int $periodoId = null): array
+    {
+        $docente = User::with('institution.categoria', 'institution.tipoNombramiento')->findOrFail($docenteId);
+
+        $categoriaValue = strtolower($docente->institution?->categoria?->value ?? 'pu-i');
+
+        // ── 1. Labor Académica ────────────────────────────────────────────────
+        $evalQuery = Evaluacion::where('docente_id', $docenteId)
+            ->where('estado', 'completada');
+
+        if ($periodoId) {
+            $evalQuery->where('periodo_id', $periodoId);
+        }
+
+        $ultimaEval        = $evalQuery->latest()->first();
+        $puntajeLaborAca   = $ultimaEval?->puntaje ?? 0;
+        $notaPromedioLabor = $ultimaEval?->nota_promedio;
+
+        // ── 2. Tiempo de Servicio ─────────────────────────────────────────────
+        $puntajeTiempo = $docente->institution?->puntaje_tiempo_servicio ?? 0;
+
+        // ── 3–7. Credenciales ─────────────────────────────────────────────────
+        $puntajeCapacitacion = CredencialCapacitacion::puntajeTotalDocente($docenteId);
+        $puntajeProyeccion   = CredencialProyeccionSocial::puntajeTotalDocente($docenteId);
+        $puntajeEspec        = CredencialEspecializacion::puntajeTotalDocente($docenteId);
+        $puntajeInv          = CredencialInvestigacion::puntajeTotalDocente($docenteId);
+        $puntajeSeguimiento  = CredencialSeguimiento::puntajeTotalDocente($docenteId);
+
+        // ── Aplicar topes de la categoría siguiente (la que quiere alcanzar) ──
+        $siguienteCategoria = self::siguienteCategoria($categoriaValue);
+        $topes              = $siguienteCategoria
+            ? self::MAXIMOS[$siguienteCategoria]
+            : self::MAXIMOS['pu-iv']; // si ya es PU-IV, comparar contra PU-IV
+
+        $aspectos = [
+            'labor_academica'   => [
+                'label'      => 'Labor Académica',
+                'ganado'     => min((float) $puntajeLaborAca, $topes['labor_academica']),
+                'maximo'     => $topes['labor_academica'],
+                'bruto'      => (float) $puntajeLaborAca,
+                'detalle'    => $notaPromedioLabor !== null
+                    ? "Nota promedio: " . number_format($notaPromedioLabor, 2)
+                    : 'Sin evaluación completada',
+            ],
+            'tiempo_servicio'   => [
+                'label'   => 'Tiempo de Servicio',
+                'ganado'  => min((float) $puntajeTiempo, $topes['tiempo_servicio']),
+                'maximo'  => $topes['tiempo_servicio'],
+                'bruto'   => (float) $puntajeTiempo,
+                'detalle' => $docente->institution?->fecha_ingreso
+                    ? 'Desde ' . $docente->institution->fecha_ingreso->format('d/m/Y')
+                    : 'Sin fecha de ingreso registrada',
+            ],
+            'capacitacion'      => [
+                'label'   => 'Capacitación Didáctica-Pedagógica',
+                'ganado'  => min($puntajeCapacitacion, $topes['capacitacion']),
+                'maximo'  => $topes['capacitacion'],
+                'bruto'   => $puntajeCapacitacion,
+                'detalle' => 'Últimos 5 años (máx 3 cursos)',
+            ],
+            'proyeccion_social' => [
+                'label'   => 'Proyección Social',
+                'ganado'  => min($puntajeProyeccion, $topes['proyeccion_social']),
+                'maximo'  => $topes['proyeccion_social'],
+                'bruto'   => $puntajeProyeccion,
+                'detalle' => 'Últimos 5 años (máx 3 proyectos)',
+            ],
+            'especializacion'   => [
+                'label'   => 'Especialización',
+                'ganado'  => min($puntajeEspec, $topes['especializacion']),
+                'maximo'  => $topes['especializacion'],
+                'bruto'   => $puntajeEspec,
+                'detalle' => 'Grados siempre válidos; cursos últimos 5 años',
+            ],
+            'investigacion'     => [
+                'label'   => 'Investigación y Publicaciones',
+                'ganado'  => min($puntajeInv, $topes['investigacion']),
+                'maximo'  => $topes['investigacion'],
+                'bruto'   => $puntajeInv,
+                'detalle' => 'Últimos 5 años',
+            ],
+            'seguimiento'       => [
+                'label'   => 'Seguimiento Curricular',
+                'ganado'  => min($puntajeSeguimiento, $topes['seguimiento']),
+                'maximo'  => $topes['seguimiento'],
+                'bruto'   => $puntajeSeguimiento,
+                'detalle' => 'Últimos 5 años (cursos acumulan máx 2 pts)',
+            ],
+        ];
+
+        $totalGanado = round(array_sum(array_column($aspectos, 'ganado')), 2);
+        $totalMaximo = $topes['total'];
+        $cumpleAscenso = $siguienteCategoria !== null && $totalGanado >= $totalMaximo;
+
+        return [
+            'docente'             => $docente,
+            'categoria_actual'    => strtoupper($categoriaValue),
+            'siguiente_categoria' => $siguienteCategoria ? strtoupper($siguienteCategoria) : null,
+            'aspectos'            => $aspectos,
+            'total_ganado'        => $totalGanado,
+            'total_maximo'        => $totalMaximo,
+            'porcentaje'          => $totalMaximo > 0 ? round(($totalGanado / $totalMaximo) * 100, 1) : 0,
+            'cumple_ascenso'      => $cumpleAscenso,
+            'puntaje_faltante'    => $cumpleAscenso ? 0 : max(0, $totalMaximo - $totalGanado),
+            'periodo_id'          => $periodoId,
+            'maximos_referencia'  => self::MAXIMOS,
+        ];
+    }
+
+    private static function siguienteCategoria(string $actual): ?string
+    {
+        return match (strtolower($actual)) {
+            'pu-i'  => 'pu-ii',
+            'pu-ii' => 'pu-iii',
+            'pu-iii'=> 'pu-iv',
+            default => null, // PU-IV ya es el máximo
+        };
+    }
+}

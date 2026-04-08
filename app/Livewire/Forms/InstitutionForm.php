@@ -19,4 +19,8 @@ class InstitutionForm extends Form
     public $categoria_escalafonaria = null;
     #[Validate('required', message: 'El campo area de desempeño es requerido')]
     public $area_desempeño = null;
+    #[Validate('required', message: 'El campo fecha de ingreso a la UES es requerido')]
+    public $fecha_ingreso = null;
+    #[Validate('required', message: 'El campo tipo de nombramiento es requerido')]
+    public $tipo_nombramiento = null;
 }

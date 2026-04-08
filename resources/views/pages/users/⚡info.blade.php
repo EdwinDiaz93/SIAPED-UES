@@ -8,6 +8,7 @@ use App\Models\Document;
 use Livewire\WithPagination;
 use App\Mail\ApproveMail;
 use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Role;
 
 new class extends Component {
     use WithPagination;
@@ -38,7 +39,15 @@ new class extends Component {
 
     public function approveUser()
     {
+        $rolDocente   = Role::where('name', 'docente')->firstOrFail();
+        $rolInactivo  = Role::where('name', 'inactivo')->firstOrFail();
+
+        // Quitar rol inactivo y asignar docente
+        $this->usuario->removeRole($rolInactivo);
+        $this->usuario->assignRole($rolDocente);
+
         Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
+
         return $this->redirectRoute('manage.users');
     }
 
@@ -204,6 +213,18 @@ new class extends Component {
         <div class="grid grid-cols-1">
             <label class="font-bold">Area de desempeño:</label>
             <p>{{ $this->usuario->institution->area->name }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Fecha de ingreso a la UES:</label>
+            <p>{{ $this->usuario->institution->fecha_ingreso ?? '-' }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Tipo de nombramiento:</label>
+            <p>{{ $this->usuario->institution->tipoNombramiento->name ?? '-' }}</p>
+        </div>
+        <div class="grid grid-cols-1">
+            <label class="font-bold">Puntaje Tiempo de Servicio:</label>
+            <p>{{ $this->usuario->institution->puntaje_tiempo_servicio ?? '0' }} pts</p>
         </div>
 
     </div>

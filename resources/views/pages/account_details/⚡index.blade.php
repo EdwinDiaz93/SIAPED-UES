@@ -33,6 +33,7 @@ new class extends Component {
     public $escuelas = [];
     public $categoriasEscalafonarias = [];
     public $areasDeDesempeño = [];
+    public $tiposNombramiento = [];
 
     public function saveUser()
     {
@@ -79,21 +80,25 @@ new class extends Component {
         $institution = Institution::where('user_id', auth()->user()->id)->first();
         if ($institution == null) {
             Institution::create([
-                'user_id' => auth()->user()->id,
-                'grado_id' => $this->institutionForm->grado_academico,
-                'institucion_id' => $this->institutionForm->institucion_educativa,
-                'escuela_id' => $this->institutionForm->escuela_unidad,
-                'categoria_id' => $this->institutionForm->categoria_escalafonaria,
-                'area_id' => $this->institutionForm->area_desempeño,
-                'fecha_graduacion' => $this->institutionForm->fecha_graduacion,
+                'user_id'              => auth()->user()->id,
+                'grado_id'             => $this->institutionForm->grado_academico,
+                'institucion_id'       => $this->institutionForm->institucion_educativa,
+                'escuela_id'           => $this->institutionForm->escuela_unidad,
+                'categoria_id'         => $this->institutionForm->categoria_escalafonaria,
+                'area_id'              => $this->institutionForm->area_desempeño,
+                'fecha_graduacion'     => $this->institutionForm->fecha_graduacion,
+                'fecha_ingreso'        => $this->institutionForm->fecha_ingreso,
+                'tipo_nombramiento_id' => $this->institutionForm->tipo_nombramiento,
             ]);
         } else {
-            $institution->grado_id = $this->institutionForm->grado_academico;
-            $institution->institucion_id = $this->institutionForm->institucion_educativa;
-            $institution->escuela_id = $this->institutionForm->escuela_unidad;
-            $institution->categoria_id = $this->institutionForm->categoria_escalafonaria;
-            $institution->area_id = $this->institutionForm->area_desempeño;
-            $institution->fecha_graduacion = $this->institutionForm->fecha_graduacion;
+            $institution->grado_id             = $this->institutionForm->grado_academico;
+            $institution->institucion_id        = $this->institutionForm->institucion_educativa;
+            $institution->escuela_id            = $this->institutionForm->escuela_unidad;
+            $institution->categoria_id          = $this->institutionForm->categoria_escalafonaria;
+            $institution->area_id               = $this->institutionForm->area_desempeño;
+            $institution->fecha_graduacion      = $this->institutionForm->fecha_graduacion;
+            $institution->fecha_ingreso         = $this->institutionForm->fecha_ingreso;
+            $institution->tipo_nombramiento_id  = $this->institutionForm->tipo_nombramiento;
             $institution->save();
         }
         $this->dispatch('notify', type: 'success', message: 'Datos institucionales guardados correctamente');
@@ -131,6 +136,11 @@ new class extends Component {
         $this->escuelas = CatalogValue::where('catalog_type_id', 7)->get();
         $this->categoriasEscalafonarias = CatalogValue::where('catalog_type_id', 8)->get();
         $this->areasDeDesempeño = CatalogValue::where('catalog_type_id', 9)->get();
+
+        $tipoNombramientoCatalog = \App\Models\CatalogType::where('value', 'Tipo Nombramiento')->first();
+        $this->tiposNombramiento = $tipoNombramientoCatalog
+            ? CatalogValue::where('catalog_type_id', $tipoNombramientoCatalog->id)->get()
+            : collect();
 
         $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
 
@@ -172,12 +182,14 @@ new class extends Component {
 
         $userInstitucion = Institution::where('user_id', auth()->user()->id)->first();
         if ($userInstitucion != null) {
-            $this->institutionForm->grado_academico = $userInstitucion->grado_id;
-            $this->institutionForm->institucion_educativa = $userInstitucion->institucion_id;
-            $this->institutionForm->escuela_unidad = $userInstitucion->escuela_id;
+            $this->institutionForm->grado_academico        = $userInstitucion->grado_id;
+            $this->institutionForm->institucion_educativa  = $userInstitucion->institucion_id;
+            $this->institutionForm->escuela_unidad         = $userInstitucion->escuela_id;
             $this->institutionForm->categoria_escalafonaria = $userInstitucion->categoria_id;
-            $this->institutionForm->area_desempeño = $userInstitucion->area_id;
-            $this->institutionForm->fecha_graduacion = $userInstitucion->fecha_graduacion;
+            $this->institutionForm->area_desempeño         = $userInstitucion->area_id;
+            $this->institutionForm->fecha_graduacion       = $userInstitucion->fecha_graduacion;
+            $this->institutionForm->fecha_ingreso          = $userInstitucion->fecha_ingreso;
+            $this->institutionForm->tipo_nombramiento      = $userInstitucion->tipo_nombramiento_id;
         }
     }
 };
@@ -498,6 +510,34 @@ new class extends Component {
                         </div>
 
 
+
+                    </div>
+
+                    <div class="flex flex-row w-full mt-5">
+
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Fecha de ingreso a la UES:</label>
+                            <input type="date" wire:model='institutionForm.fecha_ingreso'
+                                class=" p-2 border rounded-lg border-ues w-full">
+                            @error('institutionForm.fecha_ingreso')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="flex flex-col w-120 mx-1 ">
+                            <label class="font-bold">Tipo de nombramiento:</label>
+                            <select wire:model='institutionForm.tipo_nombramiento'
+                                class="p-[0.55rem] border rounded-lg border-ues w-full">
+                                @forelse ($this->tiposNombramiento as $tipo)
+                                    <option value={{ $tipo->id }}>{{ $tipo->name }}</option>
+                                @empty
+                                    <option value={{ null }}>--Sin opciones--</option>
+                                @endforelse
+                            </select>
+                            @error('institutionForm.tipo_nombramiento')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
+                        </div>
 
                     </div>
 

@@ -32,6 +32,36 @@
                             {{ __('Administrar Usuarios') }}
                         </flux:sidebar.item>
                     @endcan
+                    @can('manage.periodos')
+                        <flux:sidebar.item icon="calendar" :href="route('manage.periodos')"
+                            :current="request()->routeIs('manage.periodos')" wire:navigate>
+                            {{ __('Periodos de Evaluación') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.evaluaciones')
+                        <flux:sidebar.item icon="clipboard-document-check" :href="route('manage.evaluaciones')"
+                            :current="request()->routeIs('manage.evaluaciones', 'evaluaciones.cuestionario')" wire:navigate>
+                            {{ __('Evaluaciones') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('fill.credenciales')
+                        <flux:sidebar.item icon="academic-cap" :href="route('credenciales')"
+                            :current="request()->routeIs('credenciales')" wire:navigate>
+                            {{ __('Mis Credenciales') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('fill.credenciales')
+                        <flux:sidebar.item icon="document-chart-bar" :href="route('formulario.show', ['docenteId' => auth()->id()])"
+                            :current="request()->routeIs('formulario.show')" wire:navigate>
+                            {{ __('Mi Formulario') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.reportes')
+                        <flux:sidebar.item icon="chart-bar" :href="route('reportes')"
+                            :current="request()->routeIs('reportes')" wire:navigate>
+                            {{ __('Reportes') }}
+                        </flux:sidebar.item>
+                    @endcan
                 @endif
             </flux:sidebar.group>
         </flux:sidebar.nav>

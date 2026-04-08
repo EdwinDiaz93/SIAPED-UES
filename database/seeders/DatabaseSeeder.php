@@ -49,5 +49,6 @@ class DatabaseSeeder extends Seeder
         $adminUser->assignRole([$admin]);
 
         $this->call(CatalogSeeder::class);
+        $this->call(TipoNombramientoSeeder::class);
     }
 }
