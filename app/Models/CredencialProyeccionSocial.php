@@ -11,7 +11,7 @@ class CredencialProyeccionSocial extends Model
 
     protected $fillable = [
         'docente_id', 'nombre', 'responsabilidad', 'cobertura',
-        'duracion', 'fecha_inicio', 'fecha_fin', 'puntaje',
+        'duracion', 'fecha_inicio', 'fecha_fin', 'puntaje', 'estado',
     ];
 
     protected function casts(): array
@@ -67,6 +67,7 @@ class CredencialProyeccionSocial extends Model
 
         return self::where('docente_id', $docenteId)
             ->where('fecha_fin', '>=', $corte)
+            ->where('estado', 'aprobado')
             ->orderByDesc('puntaje')
             ->take(3)
             ->sum('puntaje');

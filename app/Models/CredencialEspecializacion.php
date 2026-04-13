@@ -10,7 +10,7 @@ class CredencialEspecializacion extends Model
     protected $table = 'credenciales_especializacion';
 
     protected $fillable = [
-        'docente_id', 'tipo', 'titulo', 'institucion', 'horas', 'fecha', 'puntaje',
+        'docente_id', 'tipo', 'titulo', 'institucion', 'horas', 'fecha', 'puntaje', 'estado',
     ];
 
     protected function casts(): array
@@ -56,12 +56,14 @@ class CredencialEspecializacion extends Model
         // Grados: siempre cuentan (no tienen límite de antigüedad)
         $grados = self::where('docente_id', $docenteId)
             ->whereIn('tipo', ['phd', 'maestria'])
+            ->where('estado', 'aprobado')
             ->sum('puntaje');
 
         // Cursos: solo últimos 5 años, máx 3 de mayor puntaje
         $cursos = self::where('docente_id', $docenteId)
             ->where('tipo', 'curso')
             ->where('fecha', '>=', $corte)
+            ->where('estado', 'aprobado')
             ->orderByDesc('puntaje')
             ->take(3)
             ->sum('puntaje');

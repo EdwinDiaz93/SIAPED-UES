@@ -44,18 +44,26 @@
                             {{ __('Evaluaciones') }}
                         </flux:sidebar.item>
                     @endcan
-                    @can('fill.credenciales')
-                        <flux:sidebar.item icon="academic-cap" :href="route('credenciales')"
-                            :current="request()->routeIs('credenciales')" wire:navigate>
-                            {{ __('Mis Credenciales') }}
+                    @can('manage.users')
+                        <flux:sidebar.item icon="clipboard-document-list" :href="route('credenciales.revision')"
+                            :current="request()->routeIs('credenciales.revision', 'credenciales')" wire:navigate>
+                            {{ __('Revisión de Credenciales') }}
                         </flux:sidebar.item>
                     @endcan
-                    @can('fill.credenciales')
-                        <flux:sidebar.item icon="document-chart-bar" :href="route('formulario.show', ['docenteId' => auth()->id()])"
-                            :current="request()->routeIs('formulario.show')" wire:navigate>
-                            {{ __('Mi Formulario') }}
-                        </flux:sidebar.item>
-                    @endcan
+                    @cannot('manage.users')
+                        @can('fill.credenciales')
+                            <flux:sidebar.item icon="academic-cap" :href="route('credenciales')"
+                                :current="request()->routeIs('credenciales')" wire:navigate>
+                                {{ __('Mis Credenciales') }}
+                            </flux:sidebar.item>
+                        @endcan
+                        @can('fill.credenciales')
+                            <flux:sidebar.item icon="document-chart-bar" :href="route('formulario.show', ['docenteId' => auth()->id()])"
+                                :current="request()->routeIs('formulario.show')" wire:navigate>
+                                {{ __('Mi Formulario') }}
+                            </flux:sidebar.item>
+                        @endcan
+                    @endcannot
                     @can('manage.reportes')
                         <flux:sidebar.item icon="chart-bar" :href="route('reportes')"
                             :current="request()->routeIs('reportes')" wire:navigate>

@@ -10,7 +10,7 @@ class CredencialSeguimiento extends Model
     protected $table = 'credenciales_seguimiento';
 
     protected $fillable = [
-        'docente_id', 'tipo', 'descripcion', 'horas', 'fecha', 'puntaje',
+        'docente_id', 'tipo', 'descripcion', 'horas', 'fecha', 'puntaje', 'estado',
     ];
 
     protected function casts(): array
@@ -50,6 +50,7 @@ class CredencialSeguimiento extends Model
 
         $registros = self::where('docente_id', $docenteId)
             ->where('fecha', '>=', $corte)
+            ->where('estado', 'aprobado')
             ->get();
 
         $grados      = $registros->where('tipo', 'grado_adicional')->sum('puntaje');

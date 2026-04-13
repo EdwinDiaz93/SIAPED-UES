@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use App\Models\CredencialCapacitacion;
 use App\Models\CredencialProyeccionSocial;
 use App\Models\CredencialEspecializacion;
@@ -11,7 +12,8 @@ use App\Models\CredencialSeguimiento;
 new class extends Component {
 
     // ID del docente a gestionar (admin puede ver cualquiera, docente solo el suyo)
-    public int $docenteId;
+    #[Url(as: 'docenteId')]
+    public int $docenteId = 0;
 
     // ── Capacitación ──────────────────────────────────────────────────────────
     public string $cap_tipo         = 'curso';
@@ -56,9 +58,17 @@ new class extends Component {
     public string $seg_fecha       = '';
     public ?int   $seg_editando    = null;
 
-    public function mount(int $docenteId = 0)
+    public function mount()
     {
-        $this->docenteId = $docenteId ?: auth()->id();
+        if (!$this->docenteId) {
+            $this->docenteId = auth()->id();
+        }
+    }
+
+    #[Computed]
+    public function esAdmin(): bool
+    {
+        return auth()->user()->can('manage.users');
     }
 
     // ── Computed: listas ──────────────────────────────────────────────────────
@@ -175,6 +185,7 @@ new class extends Component {
     public function editarCapacitacion(int $id)
     {
         $r = CredencialCapacitacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
         $this->cap_editando    = $id;
         $this->cap_tipo        = $r->tipo;
         $this->cap_nombre      = $r->nombre;
@@ -186,7 +197,9 @@ new class extends Component {
 
     public function eliminarCapacitacion(int $id)
     {
-        CredencialCapacitacion::findOrFail($id)->delete();
+        $r = CredencialCapacitacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
+        $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -241,6 +254,7 @@ new class extends Component {
     public function editarProyeccion(int $id)
     {
         $r = CredencialProyeccionSocial::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
         $this->proy_editando        = $id;
         $this->proy_nombre          = $r->nombre;
         $this->proy_responsabilidad = $r->responsabilidad;
@@ -252,7 +266,9 @@ new class extends Component {
 
     public function eliminarProyeccion(int $id)
     {
-        CredencialProyeccionSocial::findOrFail($id)->delete();
+        $r = CredencialProyeccionSocial::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
+        $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -305,6 +321,7 @@ new class extends Component {
     public function editarEspecializacion(int $id)
     {
         $r = CredencialEspecializacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
         $this->esp_editando    = $id;
         $this->esp_tipo        = $r->tipo;
         $this->esp_titulo      = $r->titulo;
@@ -315,7 +332,9 @@ new class extends Component {
 
     public function eliminarEspecializacion(int $id)
     {
-        CredencialEspecializacion::findOrFail($id)->delete();
+        $r = CredencialEspecializacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
+        $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -374,6 +393,7 @@ new class extends Component {
     public function editarInvestigacion(int $id)
     {
         $r = CredencialInvestigacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
         $this->inv_editando           = $id;
         $this->inv_tipo               = $r->tipo;
         $this->inv_titulo             = $r->titulo;
@@ -386,7 +406,9 @@ new class extends Component {
 
     public function eliminarInvestigacion(int $id)
     {
-        CredencialInvestigacion::findOrFail($id)->delete();
+        $r = CredencialInvestigacion::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
+        $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -441,6 +463,7 @@ new class extends Component {
     public function editarSeguimiento(int $id)
     {
         $r = CredencialSeguimiento::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
         $this->seg_editando    = $id;
         $this->seg_tipo        = $r->tipo;
         $this->seg_descripcion = $r->descripcion;
@@ -450,7 +473,9 @@ new class extends Component {
 
     public function eliminarSeguimiento(int $id)
     {
-        CredencialSeguimiento::findOrFail($id)->delete();
+        $r = CredencialSeguimiento::findOrFail($id);
+        abort_if($r->estado === 'aprobado', 403);
+        $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -461,13 +486,57 @@ new class extends Component {
         $this->seg_horas = ''; $this->seg_fecha = '';
         $this->resetValidation();
     }
+
+    // ── Aprobación (solo admin) ───────────────────────────────────────────────
+
+    public function aprobarCredencial(string $tipo, int $id): void
+    {
+        abort_if(!$this->esAdmin, 403);
+        $this->cambiarEstadoCredencial($tipo, $id, 'aprobado');
+        $this->dispatch('notify', type: 'success', message: 'Credencial aprobada.');
+    }
+
+    public function rechazarCredencial(string $tipo, int $id): void
+    {
+        abort_if(!$this->esAdmin, 403);
+        $this->cambiarEstadoCredencial($tipo, $id, 'rechazado');
+        $this->dispatch('notify', type: 'warning', message: 'Credencial rechazada.');
+    }
+
+    private function cambiarEstadoCredencial(string $tipo, int $id, string $estado): void
+    {
+        $modelo = match ($tipo) {
+            'capacitacion'    => CredencialCapacitacion::class,
+            'proyeccion'      => CredencialProyeccionSocial::class,
+            'especializacion' => CredencialEspecializacion::class,
+            'investigacion'   => CredencialInvestigacion::class,
+            'seguimiento'     => CredencialSeguimiento::class,
+            default           => abort(400),
+        };
+
+        $credencial = $modelo::findOrFail($id);
+        abort_if($credencial->docente_id !== $this->docenteId, 403);
+        $credencial->update(['estado' => $estado]);
+    }
 };
 ?>
 
 <div class="p-4" x-data="{ tab: 'capacitacion' }">
 
-    <h1 class="text-2xl font-bold mb-2">Credenciales Escalafonarias</h1>
-    <p class="text-sm text-gray-500 mb-6">Solo se cuentan registros de los últimos 5 años, salvo grados académicos.</p>
+    <div class="flex items-center justify-between mb-2">
+        <h1 class="text-2xl font-bold">Credenciales Escalafonarias</h1>
+        @if ($this->esAdmin)
+            <a href="{{ route('users.info', ['id' => $docenteId]) }}" wire:navigate
+               class="text-sm text-ues underline">← Volver al perfil del docente</a>
+        @endif
+    </div>
+    <p class="text-sm text-gray-500 mb-6">
+        @if ($this->esAdmin)
+            Modo revisión — puede aprobar o rechazar cada credencial.
+        @else
+            Solo se cuentan registros de los últimos 5 años, salvo grados académicos.
+        @endif
+    </p>
 
     {{-- Resumen de puntajes --}}
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -511,27 +580,27 @@ new class extends Component {
 
     {{-- ── TAB: CAPACITACIÓN ── --}}
     <div x-show="tab === 'capacitacion'" x-cloak>
-        @include('pages.credenciales.partials.capacitacion')
+        @include('pages.credenciales.partials.capacitacion', ['esAdmin' => $this->esAdmin])
     </div>
 
     {{-- ── TAB: PROYECCIÓN SOCIAL ── --}}
     <div x-show="tab === 'proyeccion'" x-cloak>
-        @include('pages.credenciales.partials.proyeccion')
+        @include('pages.credenciales.partials.proyeccion', ['esAdmin' => $this->esAdmin])
     </div>
 
     {{-- ── TAB: ESPECIALIZACIÓN ── --}}
     <div x-show="tab === 'especializacion'" x-cloak>
-        @include('pages.credenciales.partials.especializacion')
+        @include('pages.credenciales.partials.especializacion', ['esAdmin' => $this->esAdmin])
     </div>
 
     {{-- ── TAB: INVESTIGACIÓN ── --}}
     <div x-show="tab === 'investigacion'" x-cloak>
-        @include('pages.credenciales.partials.investigacion')
+        @include('pages.credenciales.partials.investigacion', ['esAdmin' => $this->esAdmin])
     </div>
 
     {{-- ── TAB: SEGUIMIENTO CURRICULAR ── --}}
     <div x-show="tab === 'seguimiento'" x-cloak>
-        @include('pages.credenciales.partials.seguimiento')
+        @include('pages.credenciales.partials.seguimiento', ['esAdmin' => $this->esAdmin])
     </div>
 
 </div>

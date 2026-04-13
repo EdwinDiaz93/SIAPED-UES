@@ -18,7 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/evaluaciones', "pages::evaluaciones.index")->middleware('permission:manage.evaluaciones')->name('manage.evaluaciones');
     Route::livewire('/evaluaciones/cuestionario', "pages::evaluaciones.cuestionario")->middleware('permission:manage.evaluaciones')->name('evaluaciones.cuestionario');
 
-    Route::livewire('/credenciales', "pages::credenciales.index")->middleware('permission:fill.credenciales')->name('credenciales');
+    Route::livewire('/credenciales', "pages::credenciales.index")->middleware('permission:fill.credenciales|manage.users')->name('credenciales');
+    Route::livewire('/credenciales/revision', "pages::credenciales.revision")->middleware('permission:manage.users')->name('credenciales.revision');
 
     Route::livewire('/formulario', "pages::formulario.show")->middleware('permission:manage.evaluaciones|fill.credenciales')->name('formulario.show');
 

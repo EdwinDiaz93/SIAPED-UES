@@ -12,7 +12,7 @@ class CredencialInvestigacion extends Model
     protected $fillable = [
         'docente_id', 'tipo', 'titulo', 'fecha',
         'financiamiento', 'participacion', 'duracion_proyecto',
-        'tipo_publicacion', 'puntaje',
+        'tipo_publicacion', 'puntaje', 'estado',
     ];
 
     protected function casts(): array
@@ -88,6 +88,7 @@ class CredencialInvestigacion extends Model
         return round(
             self::where('docente_id', $docenteId)
                 ->where('fecha', '>=', $corte)
+                ->where('estado', 'aprobado')
                 ->sum('puntaje'),
             2
         );

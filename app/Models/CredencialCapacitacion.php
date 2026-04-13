@@ -11,7 +11,7 @@ class CredencialCapacitacion extends Model
 
     protected $fillable = [
         'docente_id', 'tipo', 'nombre', 'institucion',
-        'horas', 'fecha_inicio', 'fecha_fin', 'puntaje',
+        'horas', 'fecha_inicio', 'fecha_fin', 'puntaje', 'estado',
     ];
 
     protected function casts(): array
@@ -56,6 +56,7 @@ class CredencialCapacitacion extends Model
 
         $registros = self::where('docente_id', $docenteId)
             ->where('fecha_fin', '>=', $corte)
+            ->where('estado', 'aprobado')
             ->get();
 
         // Diplomado/maestría docencia (se suma directamente, sin límite)

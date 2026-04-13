@@ -1,5 +1,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+    {{-- Formulario (solo docente) --}}
+    @unless ($esAdmin)
     <div class="lg:col-span-1 p-4 border border-outline dark:border-outline-dark rounded-xl">
         <h3 class="font-bold mb-4 text-base">{{ $seg_editando ? 'Editar' : 'Agregar' }}</h3>
         <form wire:submit.prevent="guardarSeguimiento" class="flex flex-col gap-3">
@@ -44,8 +46,10 @@
             </div>
         </form>
     </div>
+    @endunless
 
-    <div class="lg:col-span-2">
+    {{-- Listado --}}
+    <div class="{{ $esAdmin ? 'lg:col-span-3' : 'lg:col-span-2' }}">
         <div class="overflow-hidden rounded-xl border border-outline dark:border-outline-dark">
             <table class="w-full text-sm">
                 <thead class="bg-ues text-white">
@@ -55,6 +59,7 @@
                         <th class="p-3 text-center">Horas</th>
                         <th class="p-3 text-center">Fecha</th>
                         <th class="p-3 text-center">Pts</th>
+                        <th class="p-3 text-center">Estado</th>
                         <th class="p-3 text-center">Acc.</th>
                     </tr>
                 </thead>
@@ -70,12 +75,34 @@
                             <td class="p-3 text-center">{{ $r->fecha->format('m/Y') }}</td>
                             <td class="p-3 text-center font-bold text-ues">{{ number_format($r->puntaje, 2) }}</td>
                             <td class="p-3 text-center">
-                                <button wire:click="editarSeguimiento({{ $r->id }})" class="text-blue-500 hover:text-blue-700 mr-2 cursor-pointer">✏</button>
-                                <button wire:click="eliminarSeguimiento({{ $r->id }})" wire:confirm="¿Eliminar?" class="text-red-500 hover:text-red-700 cursor-pointer">✕</button>
+                                @if ($r->estado === 'aprobado')
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Aprobado</span>
+                                @elseif ($r->estado === 'rechazado')
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-medium">Rechazado</span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700 font-medium">Pendiente</span>
+                                @endif
+                            </td>
+                            <td class="p-3 text-center whitespace-nowrap">
+                                @if ($esAdmin)
+                                    @if ($r->estado !== 'aprobado')
+                                        <button wire:click="aprobarCredencial('seguimiento', {{ $r->id }})" class="text-green-600 hover:text-green-800 text-xs font-medium mr-1 cursor-pointer">Aprobar</button>
+                                    @endif
+                                    @if ($r->estado !== 'rechazado')
+                                        <button wire:click="rechazarCredencial('seguimiento', {{ $r->id }})" class="text-red-500 hover:text-red-700 text-xs font-medium cursor-pointer">Rechazar</button>
+                                    @endif
+                                @else
+                                    @if ($r->estado !== 'aprobado')
+                                        <button wire:click="editarSeguimiento({{ $r->id }})" class="text-blue-500 hover:text-blue-700 mr-2 cursor-pointer">✏</button>
+                                        <button wire:click="eliminarSeguimiento({{ $r->id }})" wire:confirm="¿Eliminar?" class="text-red-500 hover:text-red-700 cursor-pointer">✕</button>
+                                    @else
+                                        <span class="text-xs text-gray-400">Bloqueado</span>
+                                    @endif
+                                @endif
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="p-6 text-center text-gray-400">Sin registros.</td></tr>
+                        <tr><td colspan="7" class="p-6 text-center text-gray-400">Sin registros.</td></tr>
                     @endforelse
                 </tbody>
             </table>
