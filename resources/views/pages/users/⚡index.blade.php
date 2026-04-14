@@ -88,8 +88,8 @@ new class extends Component {
                         <td class="p-4 text-center">{{ $user->email ?? '-' }}</td>
                         <td class="p-4 text-center">{{ $user->telefono ?? '-' }}</td>
                         <td class="p-4 text-center">
-                            @switch($user->getRoleNames()[0])
-                                @case('inactivo')
+                            {{-- @switch($user->getRoleNames()[0]) --}}
+                                {{-- @case('inactivo') --}}
                                     <div class="relative w-fit">
                                         <button type="button" wire:click="reviewInfo('{{$user->id}}')"
                                             class="peer rounded-radius bg-cyan-500 cursor-pointer p-2 font-medium tracking-wide text-white  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-surface-dark-alt dark:border-surface-dark-alt dark:text-on-surface-dark dark:focus-visible:outline-primary-dark"
@@ -106,10 +106,10 @@ new class extends Component {
                                             class="absolute -top-9 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-sm bg-surface-dark px-2 py-1 text-center text-sm text-on-surface-dark-strong opacity-0 transition-all ease-out peer-hover:opacity-100 peer-focus:opacity-100 dark:bg-surface dark:text-on-surface-strong"
                                             role="tooltip">Revisar Informacion</div>
                                     </div>
-                                @break
+                                {{-- @break
 
                                 @default
-                            @endswitch
+                            @endswitch --}}
                         </td>
 
                     </tr>

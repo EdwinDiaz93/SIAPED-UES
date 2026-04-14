@@ -68,7 +68,7 @@ new class extends Component {
     #[Computed]
     public function esAdmin(): bool
     {
-        return auth()->user()->can('manage.users');
+        return auth()->user()->hasRole('admin');
     }
 
     // ── Computed: listas ──────────────────────────────────────────────────────
