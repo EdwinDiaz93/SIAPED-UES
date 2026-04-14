@@ -142,6 +142,11 @@ new class extends Component {
             ? CatalogValue::where('catalog_type_id', $tipoNombramientoCatalog->id)->get()
             : collect();
 
+        // Valor por defecto: primer tipo de nombramiento disponible
+        if ($this->tiposNombramiento->isNotEmpty()) {
+            $this->institutionForm->tipo_nombramiento = $this->tiposNombramiento->first()->id;
+        }
+
         $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
 
         $this->userForm->sexo = $sexOption->id;
@@ -384,24 +389,33 @@ new class extends Component {
                         </div>
 
                         <div class="flex flex-col w-120 mx-1">
-                            <label class="font-bold">Fecha De Expedicion:</label>
+                            <label class="font-bold">Fecha De Expedicion: <span class="text-red-500">*</span></label>
                             <input type="date" wire:model="documentForm.fecha_expedicion"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('documentForm.fecha_expedicion')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
 
                         <div class="flex flex-col w-120 mx-1">
-                            <label class="font-bold">Lugar De Expedicion:</label>
+                            <label class="font-bold">Lugar De Expedicion: <span class="text-red-500">*</span></label>
                             <input type="text" wire:model="documentForm.lugar_expedicion"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('documentForm.lugar_expedicion')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
 
                     </div>
 
                     <div class="flex flex-row w-full mt-6">
                         <div class="flex flex-col w-120 mx-1">
-                            <label class="font-bold">Fecha De Expiracion:</label>
+                            <label class="font-bold">Fecha De Expiracion: <span class="text-red-500">*</span></label>
                             <input type="date" wire:model="documentForm.fecha_expiracion"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('documentForm.fecha_expiracion')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
                         </div>
 
 

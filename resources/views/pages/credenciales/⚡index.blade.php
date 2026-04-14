@@ -3,6 +3,8 @@
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Storage;
 use App\Models\CredencialCapacitacion;
 use App\Models\CredencialProyeccionSocial;
 use App\Models\CredencialEspecializacion;
@@ -10,6 +12,7 @@ use App\Models\CredencialInvestigacion;
 use App\Models\CredencialSeguimiento;
 
 new class extends Component {
+    use WithFileUploads;
 
     // ID del docente a gestionar (admin puede ver cualquiera, docente solo el suyo)
     #[Url(as: 'docenteId')]
@@ -23,6 +26,8 @@ new class extends Component {
     public string $cap_fecha_inicio = '';
     public string $cap_fecha_fin    = '';
     public ?int   $cap_editando     = null;
+    public        $cap_archivo      = null;
+    public string $cap_archivo_desc = '';
 
     // ── Proyección Social ─────────────────────────────────────────────────────
     public string $proy_nombre          = '';
@@ -32,6 +37,8 @@ new class extends Component {
     public string $proy_fecha_inicio    = '';
     public string $proy_fecha_fin       = '';
     public ?int   $proy_editando        = null;
+    public        $proy_archivo         = null;
+    public string $proy_archivo_desc    = '';
 
     // ── Especialización ───────────────────────────────────────────────────────
     public string $esp_tipo        = 'maestria';
@@ -40,6 +47,8 @@ new class extends Component {
     public string $esp_horas       = '';
     public string $esp_fecha       = '';
     public ?int   $esp_editando    = null;
+    public        $esp_archivo     = null;
+    public string $esp_archivo_desc = '';
 
     // ── Investigación ─────────────────────────────────────────────────────────
     public string $inv_tipo              = 'proyecto';
@@ -50,6 +59,8 @@ new class extends Component {
     public string $inv_duracion_proyecto = 'lt1anio';
     public string $inv_tipo_publicacion  = 'articulo_indexado';
     public ?int   $inv_editando          = null;
+    public        $inv_archivo           = null;
+    public string $inv_archivo_desc      = '';
 
     // ── Seguimiento ───────────────────────────────────────────────────────────
     public string $seg_tipo        = 'grado_adicional';
@@ -57,6 +68,8 @@ new class extends Component {
     public string $seg_horas       = '';
     public string $seg_fecha       = '';
     public ?int   $seg_editando    = null;
+    public        $seg_archivo     = null;
+    public string $seg_archivo_desc = '';
 
     public function mount()
     {
@@ -151,9 +164,13 @@ new class extends Component {
             'cap_horas'        => 'required_if:cap_tipo,curso|nullable|integer|min:1',
             'cap_fecha_inicio' => 'required|date',
             'cap_fecha_fin'    => 'required|date|after_or_equal:cap_fecha_inicio',
+            'cap_archivo'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'cap_archivo_desc' => 'nullable|string|max:255',
         ], [
-            'cap_horas.required_if' => 'Las horas son requeridas para cursos.',
+            'cap_horas.required_if'        => 'Las horas son requeridas para cursos.',
             'cap_fecha_fin.after_or_equal' => 'La fecha fin debe ser posterior al inicio.',
+            'cap_archivo.mimes'            => 'Solo se permiten archivos PDF, JPG o PNG.',
+            'cap_archivo.max'              => 'El archivo no debe superar 5 MB.',
         ]);
 
         $puntaje = CredencialCapacitacion::calcularPuntaje(
@@ -172,8 +189,19 @@ new class extends Component {
             'puntaje'      => $puntaje,
         ];
 
+        if ($this->cap_archivo) {
+            $data['archivo_path']        = $this->subirArchivo($this->cap_archivo, 'capacitacion');
+            $data['archivo_descripcion'] = $this->cap_archivo_desc ?: null;
+        } elseif ($this->cap_archivo_desc && $this->cap_editando) {
+            $data['archivo_descripcion'] = $this->cap_archivo_desc;
+        }
+
         if ($this->cap_editando) {
-            CredencialCapacitacion::findOrFail($this->cap_editando)->update($data);
+            $registro = CredencialCapacitacion::findOrFail($this->cap_editando);
+            if ($this->cap_archivo && $registro->archivo_path) {
+                Storage::disk('public')->delete($registro->archivo_path);
+            }
+            $registro->update($data);
         } else {
             CredencialCapacitacion::create($data);
         }
@@ -186,19 +214,22 @@ new class extends Component {
     {
         $r = CredencialCapacitacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
-        $this->cap_editando    = $id;
-        $this->cap_tipo        = $r->tipo;
-        $this->cap_nombre      = $r->nombre;
-        $this->cap_institucion = $r->institucion ?? '';
-        $this->cap_horas       = (string) ($r->horas ?? '');
+        $this->cap_editando     = $id;
+        $this->cap_tipo         = $r->tipo;
+        $this->cap_nombre       = $r->nombre;
+        $this->cap_institucion  = $r->institucion ?? '';
+        $this->cap_horas        = (string) ($r->horas ?? '');
         $this->cap_fecha_inicio = $r->fecha_inicio->format('Y-m-d');
         $this->cap_fecha_fin    = $r->fecha_fin->format('Y-m-d');
+        $this->cap_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->cap_archivo      = null;
     }
 
     public function eliminarCapacitacion(int $id)
     {
         $r = CredencialCapacitacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
+        if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
         $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
@@ -208,6 +239,7 @@ new class extends Component {
         $this->cap_editando = null;
         $this->cap_tipo = 'curso'; $this->cap_nombre = ''; $this->cap_institucion = '';
         $this->cap_horas = ''; $this->cap_fecha_inicio = ''; $this->cap_fecha_fin = '';
+        $this->cap_archivo = null; $this->cap_archivo_desc = '';
         $this->resetValidation();
     }
 
@@ -222,6 +254,8 @@ new class extends Component {
             'proy_duracion'        => 'required|in:lte3meses,3a6meses,gt6meses',
             'proy_fecha_inicio'    => 'required|date',
             'proy_fecha_fin'       => 'required|date|after_or_equal:proy_fecha_inicio',
+            'proy_archivo'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'proy_archivo_desc'    => 'nullable|string|max:255',
         ]);
 
         $puntaje = CredencialProyeccionSocial::calcularPuntaje(
@@ -241,8 +275,19 @@ new class extends Component {
             'puntaje'         => $puntaje,
         ];
 
+        if ($this->proy_archivo) {
+            $data['archivo_path']        = $this->subirArchivo($this->proy_archivo, 'proyeccion');
+            $data['archivo_descripcion'] = $this->proy_archivo_desc ?: null;
+        } elseif ($this->proy_archivo_desc && $this->proy_editando) {
+            $data['archivo_descripcion'] = $this->proy_archivo_desc;
+        }
+
         if ($this->proy_editando) {
-            CredencialProyeccionSocial::findOrFail($this->proy_editando)->update($data);
+            $registro = CredencialProyeccionSocial::findOrFail($this->proy_editando);
+            if ($this->proy_archivo && $registro->archivo_path) {
+                Storage::disk('public')->delete($registro->archivo_path);
+            }
+            $registro->update($data);
         } else {
             CredencialProyeccionSocial::create($data);
         }
@@ -262,12 +307,15 @@ new class extends Component {
         $this->proy_duracion        = $r->duracion;
         $this->proy_fecha_inicio    = $r->fecha_inicio->format('Y-m-d');
         $this->proy_fecha_fin       = $r->fecha_fin->format('Y-m-d');
+        $this->proy_archivo_desc    = $r->archivo_descripcion ?? '';
+        $this->proy_archivo         = null;
     }
 
     public function eliminarProyeccion(int $id)
     {
         $r = CredencialProyeccionSocial::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
+        if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
         $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
@@ -278,6 +326,7 @@ new class extends Component {
         $this->proy_nombre = ''; $this->proy_responsabilidad = 'formulador';
         $this->proy_cobertura = 'local'; $this->proy_duracion = 'lte3meses';
         $this->proy_fecha_inicio = ''; $this->proy_fecha_fin = '';
+        $this->proy_archivo = null; $this->proy_archivo_desc = '';
         $this->resetValidation();
     }
 
@@ -291,6 +340,8 @@ new class extends Component {
             'esp_institucion' => 'nullable|string|max:255',
             'esp_horas'       => 'required_if:esp_tipo,curso|nullable|integer|min:1',
             'esp_fecha'       => 'required|date',
+            'esp_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'esp_archivo_desc'=> 'nullable|string|max:255',
         ]);
 
         $puntaje = CredencialEspecializacion::calcularPuntaje(
@@ -308,8 +359,19 @@ new class extends Component {
             'puntaje'     => $puntaje,
         ];
 
+        if ($this->esp_archivo) {
+            $data['archivo_path']        = $this->subirArchivo($this->esp_archivo, 'especializacion');
+            $data['archivo_descripcion'] = $this->esp_archivo_desc ?: null;
+        } elseif ($this->esp_archivo_desc && $this->esp_editando) {
+            $data['archivo_descripcion'] = $this->esp_archivo_desc;
+        }
+
         if ($this->esp_editando) {
-            CredencialEspecializacion::findOrFail($this->esp_editando)->update($data);
+            $registro = CredencialEspecializacion::findOrFail($this->esp_editando);
+            if ($this->esp_archivo && $registro->archivo_path) {
+                Storage::disk('public')->delete($registro->archivo_path);
+            }
+            $registro->update($data);
         } else {
             CredencialEspecializacion::create($data);
         }
@@ -322,18 +384,21 @@ new class extends Component {
     {
         $r = CredencialEspecializacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
-        $this->esp_editando    = $id;
-        $this->esp_tipo        = $r->tipo;
-        $this->esp_titulo      = $r->titulo;
-        $this->esp_institucion = $r->institucion ?? '';
-        $this->esp_horas       = (string) ($r->horas ?? '');
-        $this->esp_fecha       = $r->fecha->format('Y-m-d');
+        $this->esp_editando     = $id;
+        $this->esp_tipo         = $r->tipo;
+        $this->esp_titulo       = $r->titulo;
+        $this->esp_institucion  = $r->institucion ?? '';
+        $this->esp_horas        = (string) ($r->horas ?? '');
+        $this->esp_fecha        = $r->fecha->format('Y-m-d');
+        $this->esp_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->esp_archivo      = null;
     }
 
     public function eliminarEspecializacion(int $id)
     {
         $r = CredencialEspecializacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
+        if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
         $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
@@ -343,6 +408,7 @@ new class extends Component {
         $this->esp_editando = null;
         $this->esp_tipo = 'maestria'; $this->esp_titulo = ''; $this->esp_institucion = '';
         $this->esp_horas = ''; $this->esp_fecha = '';
+        $this->esp_archivo = null; $this->esp_archivo_desc = '';
         $this->resetValidation();
     }
 
@@ -358,6 +424,8 @@ new class extends Component {
             'inv_participacion'     => 'required_if:inv_tipo,proyecto',
             'inv_duracion_proyecto' => 'required_if:inv_tipo,proyecto',
             'inv_tipo_publicacion'  => 'required_if:inv_tipo,publicacion',
+            'inv_archivo'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'inv_archivo_desc'      => 'nullable|string|max:255',
         ]);
 
         $puntaje = CredencialInvestigacion::calcularPuntaje([
@@ -380,8 +448,19 @@ new class extends Component {
             'puntaje'            => $puntaje,
         ];
 
+        if ($this->inv_archivo) {
+            $data['archivo_path']        = $this->subirArchivo($this->inv_archivo, 'investigacion');
+            $data['archivo_descripcion'] = $this->inv_archivo_desc ?: null;
+        } elseif ($this->inv_archivo_desc && $this->inv_editando) {
+            $data['archivo_descripcion'] = $this->inv_archivo_desc;
+        }
+
         if ($this->inv_editando) {
-            CredencialInvestigacion::findOrFail($this->inv_editando)->update($data);
+            $registro = CredencialInvestigacion::findOrFail($this->inv_editando);
+            if ($this->inv_archivo && $registro->archivo_path) {
+                Storage::disk('public')->delete($registro->archivo_path);
+            }
+            $registro->update($data);
         } else {
             CredencialInvestigacion::create($data);
         }
@@ -394,20 +473,23 @@ new class extends Component {
     {
         $r = CredencialInvestigacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
-        $this->inv_editando           = $id;
-        $this->inv_tipo               = $r->tipo;
-        $this->inv_titulo             = $r->titulo;
-        $this->inv_fecha              = $r->fecha->format('Y-m-d');
-        $this->inv_financiamiento     = $r->financiamiento ?? 'institucional';
-        $this->inv_participacion      = $r->participacion ?? 'investigador';
-        $this->inv_duracion_proyecto  = $r->duracion_proyecto ?? 'lt1anio';
-        $this->inv_tipo_publicacion   = $r->tipo_publicacion ?? 'articulo_indexado';
+        $this->inv_editando          = $id;
+        $this->inv_tipo              = $r->tipo;
+        $this->inv_titulo            = $r->titulo;
+        $this->inv_fecha             = $r->fecha->format('Y-m-d');
+        $this->inv_financiamiento    = $r->financiamiento ?? 'institucional';
+        $this->inv_participacion     = $r->participacion ?? 'investigador';
+        $this->inv_duracion_proyecto = $r->duracion_proyecto ?? 'lt1anio';
+        $this->inv_tipo_publicacion  = $r->tipo_publicacion ?? 'articulo_indexado';
+        $this->inv_archivo_desc      = $r->archivo_descripcion ?? '';
+        $this->inv_archivo           = null;
     }
 
     public function eliminarInvestigacion(int $id)
     {
         $r = CredencialInvestigacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
+        if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
         $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
@@ -418,6 +500,7 @@ new class extends Component {
         $this->inv_tipo = 'proyecto'; $this->inv_titulo = ''; $this->inv_fecha = '';
         $this->inv_financiamiento = 'institucional'; $this->inv_participacion = 'investigador';
         $this->inv_duracion_proyecto = 'lt1anio'; $this->inv_tipo_publicacion = 'articulo_indexado';
+        $this->inv_archivo = null; $this->inv_archivo_desc = '';
         $this->resetValidation();
     }
 
@@ -430,6 +513,8 @@ new class extends Component {
             'seg_descripcion' => 'required|string|max:255',
             'seg_horas'       => 'required_if:seg_tipo,curso|nullable|integer|min:20|max:60',
             'seg_fecha'       => 'required|date',
+            'seg_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'seg_archivo_desc'=> 'nullable|string|max:255',
         ], [
             'seg_horas.required_if' => 'Las horas son requeridas para cursos.',
             'seg_horas.min'         => 'Los cursos deben tener mínimo 20 horas.',
@@ -450,8 +535,19 @@ new class extends Component {
             'puntaje'     => $puntaje,
         ];
 
+        if ($this->seg_archivo) {
+            $data['archivo_path']        = $this->subirArchivo($this->seg_archivo, 'seguimiento');
+            $data['archivo_descripcion'] = $this->seg_archivo_desc ?: null;
+        } elseif ($this->seg_archivo_desc && $this->seg_editando) {
+            $data['archivo_descripcion'] = $this->seg_archivo_desc;
+        }
+
         if ($this->seg_editando) {
-            CredencialSeguimiento::findOrFail($this->seg_editando)->update($data);
+            $registro = CredencialSeguimiento::findOrFail($this->seg_editando);
+            if ($this->seg_archivo && $registro->archivo_path) {
+                Storage::disk('public')->delete($registro->archivo_path);
+            }
+            $registro->update($data);
         } else {
             CredencialSeguimiento::create($data);
         }
@@ -464,17 +560,20 @@ new class extends Component {
     {
         $r = CredencialSeguimiento::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
-        $this->seg_editando    = $id;
-        $this->seg_tipo        = $r->tipo;
-        $this->seg_descripcion = $r->descripcion;
-        $this->seg_horas       = (string) ($r->horas ?? '');
-        $this->seg_fecha       = $r->fecha->format('Y-m-d');
+        $this->seg_editando     = $id;
+        $this->seg_tipo         = $r->tipo;
+        $this->seg_descripcion  = $r->descripcion;
+        $this->seg_horas        = (string) ($r->horas ?? '');
+        $this->seg_fecha        = $r->fecha->format('Y-m-d');
+        $this->seg_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->seg_archivo      = null;
     }
 
     public function eliminarSeguimiento(int $id)
     {
         $r = CredencialSeguimiento::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
+        if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
         $r->delete();
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
@@ -484,7 +583,15 @@ new class extends Component {
         $this->seg_editando = null;
         $this->seg_tipo = 'grado_adicional'; $this->seg_descripcion = '';
         $this->seg_horas = ''; $this->seg_fecha = '';
+        $this->seg_archivo = null; $this->seg_archivo_desc = '';
         $this->resetValidation();
+    }
+
+    // ── Archivo helper ───────────────────────────────────────────────────────
+
+    private function subirArchivo($archivo, string $carpeta): string
+    {
+        return $archivo->store('credenciales/' . $carpeta, 'public');
     }
 
     // ── Aprobación (solo admin) ───────────────────────────────────────────────
