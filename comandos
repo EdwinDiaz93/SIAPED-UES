@@ -1,0 +1,34 @@
+//eliminar usuarios 4,6 , ciclo, y informacion asociada a los users credenciales informacion etc
+cd "c:/Users/jerne/OneDrive/Documents/GitHub/SIAPED-UES" && php artisan tinker --execute="
+\$ids = [4, 6];
+
+// Credenciales
+foreach(['credenciales_capacitacion','credenciales_proyeccion_social','credenciales_especializacion','credenciales_investigacion','credenciales_seguimiento'] as \$t) {
+    \$n = \DB::table(\$t)->whereIn('docente_id',\$ids)->delete();
+    echo 'Eliminado '.\$t.': '.\$n.PHP_EOL;
+}
+
+// Evaluaciones y relacionados
+foreach(['evaluaciones','formularios_consolidados','solicitudes_promocion'] as \$t) {
+    \$n = \DB::table(\$t)->whereIn('docente_id',\$ids)->delete();
+    echo 'Eliminado '.\$t.': '.\$n.PHP_EOL;
+}
+
+// Datos de perfil
+foreach(['institutions','documents'] as \$t) {
+    \$n = \DB::table(\$t)->whereIn('user_id',\$ids)->delete();
+    echo 'Eliminado '.\$t.': '.\$n.PHP_EOL;
+}
+
+// Roles
+\$n = \DB::table('model_has_roles')->whereIn('model_id',\$ids)->delete();
+echo 'Eliminado model_has_roles: '.\$n.PHP_EOL;
+
+// Usuarios
+\$n = \DB::table('users')->whereIn('id',\$ids)->delete();
+echo 'Eliminado users: '.\$n.PHP_EOL;
+
+// Periodos
+\$n = \DB::table('periodos_evaluacion')->delete();
+echo 'Eliminado periodos_evaluacion: '.\$n.PHP_EOL;
+" 2>&1

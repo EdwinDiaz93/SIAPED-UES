@@ -11,8 +11,11 @@ class DocumentDataForm extends Form
     public $document_type = null;
     #[Validate('required', message: 'El campo numero documento es requerido')]
     public $value = "";
+    #[Validate('required|date', message: 'La fecha de expedición es requerida')]
     public $fecha_expedicion = null;
+    #[Validate('required', message: 'El lugar de expedición es requerido')]
     public $lugar_expedicion = "";
+    #[Validate('required|date', message: 'La fecha de expiración es requerida')]
     public $fecha_expiracion = null;
     public $institucion = "";
 }

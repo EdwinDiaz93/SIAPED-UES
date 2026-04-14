@@ -54,7 +54,12 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-1">
+            @include('pages.credenciales.partials.archivo-form', [
+                'prefix'   => 'proy',
+                'registro' => $proy_editando ? \App\Models\CredencialProyeccionSocial::find($proy_editando) : null,
+            ])
+
+            <div class="flex gap-2 mt-3">
                 <button type="submit" class="flex-1 py-2 bg-ues text-white rounded-lg text-sm font-medium cursor-pointer hover:opacity-90">
                     {{ $proy_editando ? 'Actualizar' : 'Guardar' }}
                 </button>
@@ -78,6 +83,7 @@
                         <th class="p-3 text-center">Duración</th>
                         <th class="p-3 text-center">Pts</th>
                         <th class="p-3 text-center">Estado</th>
+                        <th class="p-3 text-center">Archivo</th>
                         <th class="p-3 text-center">Acc.</th>
                     </tr>
                 </thead>
@@ -97,6 +103,9 @@
                                 @else
                                     <span class="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700 font-medium">Pendiente</span>
                                 @endif
+                            </td>
+                            <td class="p-3 text-center">
+                                @include('pages.credenciales.partials.archivo-cell', ['r' => $r])
                             </td>
                             <td class="p-3 text-center whitespace-nowrap">
                                 @if ($esAdmin)
