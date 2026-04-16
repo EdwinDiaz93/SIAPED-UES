@@ -71,16 +71,50 @@ class PuntajeEscalafonarioCalculator
         $categoriaValue = strtolower($docente->institution?->categoria?->value ?? 'pu-i');
 
         // ── 1. Labor Académica ────────────────────────────────────────────────
-        $evalQuery = Evaluacion::where('docente_id', $docenteId)
-            ->where('estado', 'completada');
+        // El manual establece que se evalúa 2 veces al año (Ciclo I y Ciclo II)
+        // y ambas calificaciones se promedian para obtener la calificación anual.
 
         if ($periodoId) {
-            $evalQuery->where('periodo_id', $periodoId);
-        }
+            // Modo ciclo específico: mostrar solo ese período (útil para vista detalle)
+            $eval = Evaluacion::where('docente_id', $docenteId)
+                ->where('periodo_id', $periodoId)
+                ->where('estado', 'completada')
+                ->first();
 
-        $ultimaEval        = $evalQuery->latest()->first();
-        $puntajeLaborAca   = $ultimaEval?->puntaje ?? 0;
-        $notaPromedioLabor = $ultimaEval?->nota_promedio;
+            $puntajeLaborAca   = $eval?->puntaje ?? 0;
+            $notaPromedioLabor = $eval?->nota_promedio;
+            $detalleLabor      = $eval
+                ? "Nota promedio ciclo: " . number_format($eval->nota_promedio, 2)
+                : 'Sin evaluación completada en este período';
+        } else {
+            // Modo anual: buscar el año más reciente con evaluaciones completadas
+            // y promediar los ciclos de ese año
+            $anioReciente = Evaluacion::where('evaluaciones.docente_id', $docenteId)
+                ->where('evaluaciones.estado', 'completada')
+                ->join('periodos_evaluacion', 'evaluaciones.periodo_id', '=', 'periodos_evaluacion.id')
+                ->max('periodos_evaluacion.anio');
+
+            if ($anioReciente) {
+                $evalsAnio = Evaluacion::where('docente_id', $docenteId)
+                    ->where('estado', 'completada')
+                    ->whereHas('periodo', fn($q) => $q->where('anio', $anioReciente))
+                    ->with('periodo')
+                    ->get();
+
+                $totalNotas  = $evalsAnio->sum('nota_promedio');
+                $cantCiclos  = $evalsAnio->count();
+                $notaAnual   = $cantCiclos > 0 ? round($totalNotas / $cantCiclos, 2) : 0;
+                $puntajeLaborAca   = round($notaAnual * 0.50, 2);
+                $notaPromedioLabor = $notaAnual;
+
+                $ciclosTexto = $evalsAnio->map(fn($e) => "C{$e->periodo->ciclo}: " . number_format($e->nota_promedio, 2))->implode(' | ');
+                $detalleLabor = "Año {$anioReciente} ({$cantCiclos} ciclo" . ($cantCiclos > 1 ? 's' : '') . "): {$ciclosTexto}";
+            } else {
+                $puntajeLaborAca   = 0;
+                $notaPromedioLabor = null;
+                $detalleLabor      = 'Sin evaluaciones completadas';
+            }
+        }
 
         // ── 2. Tiempo de Servicio ─────────────────────────────────────────────
         $puntajeTiempo = $docente->institution?->puntaje_tiempo_servicio ?? 0;
@@ -104,9 +138,7 @@ class PuntajeEscalafonarioCalculator
                 'ganado'     => min((float) $puntajeLaborAca, $topes['labor_academica']),
                 'maximo'     => $topes['labor_academica'],
                 'bruto'      => (float) $puntajeLaborAca,
-                'detalle'    => $notaPromedioLabor !== null
-                    ? "Nota promedio: " . number_format($notaPromedioLabor, 2)
-                    : 'Sin evaluación completada',
+                'detalle'    => $detalleLabor,
             ],
             'tiempo_servicio'   => [
                 'label'   => 'Tiempo de Servicio',

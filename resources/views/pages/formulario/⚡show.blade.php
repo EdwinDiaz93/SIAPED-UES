@@ -130,10 +130,10 @@ new class extends Component {
     {{-- Controles --}}
     <div class="flex flex-wrap gap-4 items-end mb-6 p-4 bg-surface-alt dark:bg-surface-dark-alt rounded-xl print:hidden">
         <div>
-            <label class="text-sm font-semibold block mb-1">Periodo (opcional)</label>
+            <label class="text-sm font-semibold block mb-1">Periodo</label>
             <select wire:model="periodoId"
-                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-48">
-                <option value="">— Todos los periodos —</option>
+                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-56">
+                <option value="">⊕ Consolidado anual (promedio Ciclo I + II)</option>
                 @foreach (\App\Models\PeriodoEvaluacion::orderBy('anio','desc')->orderBy('ciclo')->get() as $p)
                     <option value="{{ $p->id }}">Ciclo {{ $p->ciclo }} - {{ $p->anio }}</option>
                 @endforeach
