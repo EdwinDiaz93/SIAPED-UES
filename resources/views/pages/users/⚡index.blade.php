@@ -14,11 +14,17 @@ new class extends Component {
     #[Computed]
     public function users()
     {
-        $inactivo = Role::where('id', $this->selectedRol)->first();
-        return User::role($inactivo->name)
-            ->where('id', '!=', auth()->id())
-            ->orderBy('id', 'desc')
-            ->paginate(10);
+        $query = User::where('id', '!=', auth()->id())
+            ->orderBy('id', 'desc');
+
+        if ($this->selectedRol) {
+            $rol = Role::find($this->selectedRol);
+            if ($rol) {
+                $query->role($rol->name);
+            }
+        }
+
+        return $query->paginate(10);
     }
     #[Computed]
     public function roles()
@@ -28,8 +34,7 @@ new class extends Component {
 
     public function mount()
     {
-        $inactivo = Role::where('name', 'inactivo')->first();
-        $this->selectedRol = $inactivo->id;
+        $this->selectedRol = null;
     }
 
     public function reviewInfo($id)
@@ -56,13 +61,11 @@ new class extends Component {
         </svg>
         <select id="rol" name="rol" wire:model.live='selectedRol'
             class="w-full appearance-none rounded-radius border border-outline bg-surface-alt px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-75 dark:border-outline-dark dark:bg-surface-dark-alt/50 dark:focus-visible:outline-primary-dark">
-            @forelse ($this->roles as $rol)
-                <option {{ $rol->id === $this->selectedRol ? 'selected' : '' }} value={{ $rol->id }}>
+            <option value="">Todos los roles</option>
+            @foreach ($this->roles as $rol)
+                <option {{ (string)$rol->id === (string)$this->selectedRol ? 'selected' : '' }} value="{{ $rol->id }}">
                     {{ $rol->name }}</option>
-
-            @empty
-            @endforelse
-
+            @endforeach
         </select>
     </div>
 
@@ -114,8 +117,8 @@ new class extends Component {
 
                     </tr>
                     @empty
-                        <tr class="p-4">
-                            Records Not found
+                        <tr>
+                            <td colspan="5" class="p-6 text-center text-gray-400">No se encontraron usuarios con el rol seleccionado</td>
                         </tr>
                     @endforelse
 
