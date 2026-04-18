@@ -14,7 +14,7 @@ new class extends Component {
     public int $docenteId;
 
     #[Url]
-    public ?int $periodoId = null;
+    public ?string $periodoId = null;
 
     public ?array $resultado      = null;
     public ?int   $guardadoId    = null;
@@ -32,10 +32,13 @@ new class extends Component {
 
     public function generar()
     {
-        $this->resultado = PuntajeEscalafonarioCalculator::calcular(
-            $this->docenteId,
-            $this->periodoId ?: null
-        );
+        if ($this->periodoId === 'total') {
+            $this->resultado = PuntajeEscalafonarioCalculator::calcularTotal($this->docenteId);
+        } elseif (is_numeric($this->periodoId)) {
+            $this->resultado = PuntajeEscalafonarioCalculator::calcular($this->docenteId, (int) $this->periodoId);
+        } else {
+            $this->resultado = PuntajeEscalafonarioCalculator::calcular($this->docenteId, null);
+        }
         $this->generado  = true;
         $this->guardadoId = null;
 
@@ -65,7 +68,7 @@ new class extends Component {
 
         SolicitudPromocion::create([
             'docente_id'          => $this->docenteId,
-            'periodo_id'          => $this->periodoId ?: null,
+            'periodo_id'          => is_numeric($this->periodoId) ? (int) $this->periodoId : null,
             'formulario_id'       => $this->guardadoId,
             'categoria_actual'    => $this->resultado['categoria_actual'],
             'categoria_solicitada'=> $this->resultado['siguiente_categoria'],
@@ -86,7 +89,7 @@ new class extends Component {
         $formulario = FormularioConsolidado::updateOrCreate(
             [
                 'docente_id' => $this->docenteId,
-                'periodo_id' => $this->periodoId ?: null,
+                'periodo_id' => (is_numeric($this->periodoId)) ? (int) $this->periodoId : null,
             ],
             [
                 'generado_por'        => auth()->id(),
@@ -134,6 +137,7 @@ new class extends Component {
             <select wire:model="periodoId"
                 class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-56">
                 <option value="">⊕ Consolidado anual (promedio Ciclo I + II)</option>
+                <option value="total">★ Consolidado Total (todos los años cerrados)</option>
                 @foreach (\App\Models\PeriodoEvaluacion::orderBy('anio','desc')->orderBy('ciclo')->get() as $p)
                     <option value="{{ $p->id }}">Ciclo {{ $p->ciclo }} - {{ $p->anio }}</option>
                 @endforeach
@@ -176,6 +180,22 @@ new class extends Component {
     {{-- Formulario generado --}}
     @if ($generado && $resultado)
         @php $r = $resultado; $d = $r['docente']; @endphp
+
+        @if ($periodoId === 'total' && !empty($r['anios_considerados']))
+            <div class="mb-4 flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 print:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 flex-shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                </svg>
+                <span>
+                    <strong>Consolidado Total</strong> — Años con Ciclo I y II cerrados considerados:
+                    <strong>{{ implode(', ', $r['anios_considerados']) }}</strong>
+                </span>
+            </div>
+        @elseif ($periodoId === 'total')
+            <div class="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 print:hidden">
+                No se encontraron años con ambos ciclos (I y II) cerrados.
+            </div>
+        @endif
 
         {{-- Encabezado del formulario --}}
         <div class="border-2 border-gray-300 rounded-xl overflow-hidden mb-6 print:border-black">

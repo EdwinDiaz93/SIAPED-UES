@@ -32,3 +32,9 @@ echo 'Eliminado users: '.\$n.PHP_EOL;
 \$n = \DB::table('periodos_evaluacion')->delete();
 echo 'Eliminado periodos_evaluacion: '.\$n.PHP_EOL;
 " 2>&1
+
+# 1. Eliminar todas las tablas y re-ejecutar todas las migraciones
+php artisan migrate:fresh
+
+# 2. Ejecutar seeders base (roles, permisos, admin, catálogos, tipos de nombramiento)
+php artisan db:seed
