@@ -164,7 +164,7 @@ new class extends Component {
             'cap_horas'        => 'required_if:cap_tipo,curso|nullable|integer|min:1',
             'cap_fecha_inicio' => 'required|date',
             'cap_fecha_fin'    => 'required|date|after_or_equal:cap_fecha_inicio',
-            'cap_archivo'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'cap_archivo'      => 'nullable|file|mimes:pdf|max:5120',
             'cap_archivo_desc' => 'nullable|string|max:255',
         ], [
             'cap_horas.required_if'        => 'Las horas son requeridas para cursos.',
@@ -254,7 +254,7 @@ new class extends Component {
             'proy_duracion'        => 'required|in:lte3meses,3a6meses,gt6meses',
             'proy_fecha_inicio'    => 'required|date',
             'proy_fecha_fin'       => 'required|date|after_or_equal:proy_fecha_inicio',
-            'proy_archivo'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'proy_archivo'         => 'nullable|file|mimes:pdf|max:5120',
             'proy_archivo_desc'    => 'nullable|string|max:255',
         ]);
 
@@ -340,7 +340,7 @@ new class extends Component {
             'esp_institucion' => 'nullable|string|max:255',
             'esp_horas'       => 'required_if:esp_tipo,curso|nullable|integer|min:1',
             'esp_fecha'       => 'required|date',
-            'esp_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'esp_archivo'     => 'nullable|file|mimes:pdf|max:5120',
             'esp_archivo_desc'=> 'nullable|string|max:255',
         ]);
 
@@ -424,7 +424,7 @@ new class extends Component {
             'inv_participacion'     => 'required_if:inv_tipo,proyecto',
             'inv_duracion_proyecto' => 'required_if:inv_tipo,proyecto',
             'inv_tipo_publicacion'  => 'required_if:inv_tipo,publicacion',
-            'inv_archivo'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'inv_archivo'           => 'nullable|file|mimes:pdf|max:5120',
             'inv_archivo_desc'      => 'nullable|string|max:255',
         ]);
 
@@ -513,7 +513,7 @@ new class extends Component {
             'seg_descripcion' => 'required|string|max:255',
             'seg_horas'       => 'required_if:seg_tipo,curso|nullable|integer|min:20|max:60',
             'seg_fecha'       => 'required|date',
-            'seg_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'seg_archivo'     => 'nullable|file|mimes:pdf|max:5120',
             'seg_archivo_desc'=> 'nullable|string|max:255',
         ], [
             'seg_horas.required_if' => 'Las horas son requeridas para cursos.',
@@ -708,6 +708,36 @@ new class extends Component {
     {{-- ── TAB: SEGUIMIENTO CURRICULAR ── --}}
     <div x-show="tab === 'seguimiento'" x-cloak>
         @include('pages.credenciales.partials.seguimiento', ['esAdmin' => $this->esAdmin])
+    </div>
+
+    {{-- ── Modal visor PDF (Alpine) ── --}}
+    <div
+        x-data="{ open: false, url: '', titulo: '' }"
+        x-on:abrir-pdf.window="open = true; url = $event.detail.url; titulo = $event.detail.titulo"
+        x-on:keydown.escape.window="open = false; url = ''"
+        x-show="open"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        @click.self="open = false; url = ''">
+        <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl flex flex-col"
+             style="width: min(50vw, 100%); height: 75vh;">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-zinc-700">
+                <p x-text="titulo" class="font-semibold text-sm truncate text-gray-800 dark:text-white"></p>
+                <div class="flex items-center gap-2">
+                    <a :href="url" target="_blank" download
+                       class="text-xs px-3 py-1 rounded-lg border border-ues text-ues hover:bg-ues/5">
+                        Descargar
+                    </a>
+                    <button @click="open = false; url = ''"
+                            class="text-gray-400 hover:text-gray-700 dark:hover:text-white cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <iframe :src="url" class="flex-1 w-full rounded-b-xl" style="border:none;"></iframe>
+        </div>
     </div>
 
 </div>

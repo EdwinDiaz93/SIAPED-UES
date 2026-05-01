@@ -7,9 +7,9 @@
     <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Soporte documental (opcional)</p>
 
     <div>
-        <label class="text-sm font-semibold">Archivo (PDF / JPG / PNG, máx 5 MB)</label>
+        <label class="text-sm font-semibold">Archivo (PDF, máx 5 MB)</label>
         <input type="file" wire:model="{{ $prefix }}_archivo"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept=".pdf"
             class="w-full mt-1 text-sm text-gray-600 file:mr-3 file:py-1 file:px-3
                    file:rounded-lg file:border-0 file:text-sm file:font-medium
                    file:bg-ues file:text-white hover:file:opacity-90 cursor-pointer">
