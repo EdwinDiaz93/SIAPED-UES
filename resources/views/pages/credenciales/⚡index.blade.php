@@ -28,6 +28,7 @@ new class extends Component {
     public ?int   $cap_editando     = null;
     public        $cap_archivo      = null;
     public string $cap_archivo_desc = '';
+    public string $cap_comentario   = '';
 
     // ── Proyección Social ─────────────────────────────────────────────────────
     public string $proy_nombre          = '';
@@ -39,6 +40,7 @@ new class extends Component {
     public ?int   $proy_editando        = null;
     public        $proy_archivo         = null;
     public string $proy_archivo_desc    = '';
+    public string $proy_comentario      = '';
 
     // ── Especialización ───────────────────────────────────────────────────────
     public string $esp_tipo        = 'maestria';
@@ -49,6 +51,7 @@ new class extends Component {
     public ?int   $esp_editando    = null;
     public        $esp_archivo     = null;
     public string $esp_archivo_desc = '';
+    public string $esp_comentario   = '';
 
     // ── Investigación ─────────────────────────────────────────────────────────
     public string $inv_tipo              = 'proyecto';
@@ -61,6 +64,7 @@ new class extends Component {
     public ?int   $inv_editando          = null;
     public        $inv_archivo           = null;
     public string $inv_archivo_desc      = '';
+    public string $inv_comentario        = '';
 
     // ── Seguimiento ───────────────────────────────────────────────────────────
     public string $seg_tipo        = 'grado_adicional';
@@ -70,6 +74,13 @@ new class extends Component {
     public ?int   $seg_editando    = null;
     public        $seg_archivo     = null;
     public string $seg_archivo_desc = '';
+    public string $seg_comentario   = '';
+
+    // ── Rechazo (admin) ───────────────────────────────────────────────────────
+    public bool   $showModalRechazo  = false;
+    public string $rechazo_tipo      = '';
+    public int    $rechazo_id        = 0;
+    public string $rechazo_comentario = '';
 
     public function mount()
     {
@@ -189,6 +200,8 @@ new class extends Component {
             'puntaje'      => $puntaje,
         ];
 
+        $data['comentario'] = $this->cap_comentario ?: null;
+
         if ($this->cap_archivo) {
             $data['archivo_path']        = $this->subirArchivo($this->cap_archivo, 'capacitacion');
             $data['archivo_descripcion'] = $this->cap_archivo_desc ?: null;
@@ -200,6 +213,10 @@ new class extends Component {
             $registro = CredencialCapacitacion::findOrFail($this->cap_editando);
             if ($this->cap_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
+            }
+            if ($registro->estado === 'rechazado') {
+                $data['estado'] = 'pendiente';
+                $data['comentario_rechazo'] = null;
             }
             $registro->update($data);
         } else {
@@ -222,6 +239,7 @@ new class extends Component {
         $this->cap_fecha_inicio = $r->fecha_inicio->format('Y-m-d');
         $this->cap_fecha_fin    = $r->fecha_fin->format('Y-m-d');
         $this->cap_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->cap_comentario   = $r->comentario ?? '';
         $this->cap_archivo      = null;
     }
 
@@ -239,7 +257,7 @@ new class extends Component {
         $this->cap_editando = null;
         $this->cap_tipo = 'curso'; $this->cap_nombre = ''; $this->cap_institucion = '';
         $this->cap_horas = ''; $this->cap_fecha_inicio = ''; $this->cap_fecha_fin = '';
-        $this->cap_archivo = null; $this->cap_archivo_desc = '';
+        $this->cap_archivo = null; $this->cap_archivo_desc = ''; $this->cap_comentario = '';
         $this->resetValidation();
     }
 
@@ -275,6 +293,8 @@ new class extends Component {
             'puntaje'         => $puntaje,
         ];
 
+        $data['comentario'] = $this->proy_comentario ?: null;
+
         if ($this->proy_archivo) {
             $data['archivo_path']        = $this->subirArchivo($this->proy_archivo, 'proyeccion');
             $data['archivo_descripcion'] = $this->proy_archivo_desc ?: null;
@@ -286,6 +306,10 @@ new class extends Component {
             $registro = CredencialProyeccionSocial::findOrFail($this->proy_editando);
             if ($this->proy_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
+            }
+            if ($registro->estado === 'rechazado') {
+                $data['estado'] = 'pendiente';
+                $data['comentario_rechazo'] = null;
             }
             $registro->update($data);
         } else {
@@ -308,6 +332,7 @@ new class extends Component {
         $this->proy_fecha_inicio    = $r->fecha_inicio->format('Y-m-d');
         $this->proy_fecha_fin       = $r->fecha_fin->format('Y-m-d');
         $this->proy_archivo_desc    = $r->archivo_descripcion ?? '';
+        $this->proy_comentario      = $r->comentario ?? '';
         $this->proy_archivo         = null;
     }
 
@@ -326,7 +351,7 @@ new class extends Component {
         $this->proy_nombre = ''; $this->proy_responsabilidad = 'formulador';
         $this->proy_cobertura = 'local'; $this->proy_duracion = 'lte3meses';
         $this->proy_fecha_inicio = ''; $this->proy_fecha_fin = '';
-        $this->proy_archivo = null; $this->proy_archivo_desc = '';
+        $this->proy_archivo = null; $this->proy_archivo_desc = ''; $this->proy_comentario = '';
         $this->resetValidation();
     }
 
@@ -359,6 +384,8 @@ new class extends Component {
             'puntaje'     => $puntaje,
         ];
 
+        $data['comentario'] = $this->esp_comentario ?: null;
+
         if ($this->esp_archivo) {
             $data['archivo_path']        = $this->subirArchivo($this->esp_archivo, 'especializacion');
             $data['archivo_descripcion'] = $this->esp_archivo_desc ?: null;
@@ -370,6 +397,10 @@ new class extends Component {
             $registro = CredencialEspecializacion::findOrFail($this->esp_editando);
             if ($this->esp_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
+            }
+            if ($registro->estado === 'rechazado') {
+                $data['estado'] = 'pendiente';
+                $data['comentario_rechazo'] = null;
             }
             $registro->update($data);
         } else {
@@ -391,6 +422,7 @@ new class extends Component {
         $this->esp_horas        = (string) ($r->horas ?? '');
         $this->esp_fecha        = $r->fecha->format('Y-m-d');
         $this->esp_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->esp_comentario   = $r->comentario ?? '';
         $this->esp_archivo      = null;
     }
 
@@ -408,7 +440,7 @@ new class extends Component {
         $this->esp_editando = null;
         $this->esp_tipo = 'maestria'; $this->esp_titulo = ''; $this->esp_institucion = '';
         $this->esp_horas = ''; $this->esp_fecha = '';
-        $this->esp_archivo = null; $this->esp_archivo_desc = '';
+        $this->esp_archivo = null; $this->esp_archivo_desc = ''; $this->esp_comentario = '';
         $this->resetValidation();
     }
 
@@ -448,6 +480,8 @@ new class extends Component {
             'puntaje'            => $puntaje,
         ];
 
+        $data['comentario'] = $this->inv_comentario ?: null;
+
         if ($this->inv_archivo) {
             $data['archivo_path']        = $this->subirArchivo($this->inv_archivo, 'investigacion');
             $data['archivo_descripcion'] = $this->inv_archivo_desc ?: null;
@@ -459,6 +493,10 @@ new class extends Component {
             $registro = CredencialInvestigacion::findOrFail($this->inv_editando);
             if ($this->inv_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
+            }
+            if ($registro->estado === 'rechazado') {
+                $data['estado'] = 'pendiente';
+                $data['comentario_rechazo'] = null;
             }
             $registro->update($data);
         } else {
@@ -482,6 +520,7 @@ new class extends Component {
         $this->inv_duracion_proyecto = $r->duracion_proyecto ?? 'lt1anio';
         $this->inv_tipo_publicacion  = $r->tipo_publicacion ?? 'articulo_indexado';
         $this->inv_archivo_desc      = $r->archivo_descripcion ?? '';
+        $this->inv_comentario        = $r->comentario ?? '';
         $this->inv_archivo           = null;
     }
 
@@ -500,7 +539,7 @@ new class extends Component {
         $this->inv_tipo = 'proyecto'; $this->inv_titulo = ''; $this->inv_fecha = '';
         $this->inv_financiamiento = 'institucional'; $this->inv_participacion = 'investigador';
         $this->inv_duracion_proyecto = 'lt1anio'; $this->inv_tipo_publicacion = 'articulo_indexado';
-        $this->inv_archivo = null; $this->inv_archivo_desc = '';
+        $this->inv_archivo = null; $this->inv_archivo_desc = ''; $this->inv_comentario = '';
         $this->resetValidation();
     }
 
@@ -535,6 +574,8 @@ new class extends Component {
             'puntaje'     => $puntaje,
         ];
 
+        $data['comentario'] = $this->seg_comentario ?: null;
+
         if ($this->seg_archivo) {
             $data['archivo_path']        = $this->subirArchivo($this->seg_archivo, 'seguimiento');
             $data['archivo_descripcion'] = $this->seg_archivo_desc ?: null;
@@ -546,6 +587,10 @@ new class extends Component {
             $registro = CredencialSeguimiento::findOrFail($this->seg_editando);
             if ($this->seg_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
+            }
+            if ($registro->estado === 'rechazado') {
+                $data['estado'] = 'pendiente';
+                $data['comentario_rechazo'] = null;
             }
             $registro->update($data);
         } else {
@@ -566,6 +611,7 @@ new class extends Component {
         $this->seg_horas        = (string) ($r->horas ?? '');
         $this->seg_fecha        = $r->fecha->format('Y-m-d');
         $this->seg_archivo_desc = $r->archivo_descripcion ?? '';
+        $this->seg_comentario   = $r->comentario ?? '';
         $this->seg_archivo      = null;
     }
 
@@ -583,7 +629,7 @@ new class extends Component {
         $this->seg_editando = null;
         $this->seg_tipo = 'grado_adicional'; $this->seg_descripcion = '';
         $this->seg_horas = ''; $this->seg_fecha = '';
-        $this->seg_archivo = null; $this->seg_archivo_desc = '';
+        $this->seg_archivo = null; $this->seg_archivo_desc = ''; $this->seg_comentario = '';
         $this->resetValidation();
     }
 
@@ -606,11 +652,28 @@ new class extends Component {
     public function rechazarCredencial(string $tipo, int $id): void
     {
         abort_if(!$this->esAdmin, 403);
-        $this->cambiarEstadoCredencial($tipo, $id, 'rechazado');
+        $this->rechazo_tipo       = $tipo;
+        $this->rechazo_id         = $id;
+        $this->rechazo_comentario = '';
+        $this->showModalRechazo   = true;
+    }
+
+    public function confirmarRechazo(): void
+    {
+        abort_if(!$this->esAdmin, 403);
+        $this->validate([
+            'rechazo_comentario' => 'required|string|min:5|max:500',
+        ], [
+            'rechazo_comentario.required' => 'Debe indicar el motivo del rechazo.',
+            'rechazo_comentario.min'      => 'El comentario debe tener al menos 5 caracteres.',
+        ]);
+
+        $this->cambiarEstadoCredencial($this->rechazo_tipo, $this->rechazo_id, 'rechazado', $this->rechazo_comentario);
+        $this->showModalRechazo = false;
         $this->dispatch('notify', type: 'warning', message: 'Credencial rechazada.');
     }
 
-    private function cambiarEstadoCredencial(string $tipo, int $id, string $estado): void
+    private function cambiarEstadoCredencial(string $tipo, int $id, string $estado, ?string $comentarioRechazo = null): void
     {
         $modelo = match ($tipo) {
             'capacitacion'    => CredencialCapacitacion::class,
@@ -623,7 +686,10 @@ new class extends Component {
 
         $credencial = $modelo::findOrFail($id);
         abort_if($credencial->docente_id !== $this->docenteId, 403);
-        $credencial->update(['estado' => $estado]);
+        $credencial->update([
+            'estado'             => $estado,
+            'comentario_rechazo' => $comentarioRechazo,
+        ]);
     }
 };
 ?>
@@ -709,6 +775,28 @@ new class extends Component {
     <div x-show="tab === 'seguimiento'" x-cloak>
         @include('pages.credenciales.partials.seguimiento', ['esAdmin' => $this->esAdmin])
     </div>
+
+    {{-- ── Modal rechazo de credencial ── --}}
+    @if ($this->esAdmin)
+    <div x-show="$wire.showModalRechazo" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+         @keydown.escape.window="$wire.showModalRechazo = false">
+        <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 class="font-bold text-lg mb-3 text-red-600">Rechazar credencial</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Indique el motivo del rechazo. Este comentario será visible para el docente.</p>
+            <textarea wire:model="rechazo_comentario" rows="4"
+                placeholder="Ej: El documento no corresponde al tipo de credencial declarado..."
+                class="w-full p-2 border rounded-lg border-red-300 text-sm resize-none focus:outline-none focus:border-red-500"></textarea>
+            @error('rechazo_comentario') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <div class="flex justify-end gap-3 mt-4">
+                <button wire:click="$set('showModalRechazo', false)"
+                        class="px-4 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">Cancelar</button>
+                <button wire:click="confirmarRechazo"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium cursor-pointer hover:bg-red-700">Confirmar rechazo</button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- ── Modal visor PDF (Alpine) ── --}}
     <div

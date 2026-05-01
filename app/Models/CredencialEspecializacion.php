@@ -11,7 +11,7 @@ class CredencialEspecializacion extends Model
 
     protected $fillable = [
         'docente_id', 'tipo', 'titulo', 'institucion', 'horas', 'fecha', 'puntaje', 'estado',
-        'archivo_path', 'archivo_descripcion',
+        'archivo_path', 'archivo_descripcion', 'comentario', 'comentario_rechazo',
     ];
 
     protected function casts(): array

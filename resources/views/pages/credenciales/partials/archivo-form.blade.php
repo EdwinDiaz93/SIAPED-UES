@@ -6,6 +6,14 @@
 <div class="border-t border-outline dark:border-outline-dark pt-3 mt-3">
     <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Soporte documental (opcional)</p>
 
+    <div class="mb-3">
+        <label class="text-sm font-semibold">Comentario</label>
+        <textarea wire:model="{{ $prefix }}_comentario" rows="2"
+            placeholder="Agregue información adicional o aclaraciones sobre esta credencial..."
+            class="w-full mt-1 p-2 border rounded-lg border-ues text-sm resize-none"></textarea>
+        @error($prefix . '_comentario') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+    </div>
+
     <div>
         <label class="text-sm font-semibold">Archivo (PDF, máx 5 MB)</label>
         <input type="file" wire:model="{{ $prefix }}_archivo"

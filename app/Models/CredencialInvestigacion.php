@@ -13,7 +13,7 @@ class CredencialInvestigacion extends Model
         'docente_id', 'tipo', 'titulo', 'fecha',
         'financiamiento', 'participacion', 'duracion_proyecto',
         'tipo_publicacion', 'puntaje', 'estado',
-        'archivo_path', 'archivo_descripcion',
+        'archivo_path', 'archivo_descripcion', 'comentario', 'comentario_rechazo',
     ];
 
     protected function casts(): array

@@ -2,10 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000)",
-      "Bash(php -r ':*)"
+      "Bash(php -r ':*)",
+      "Bash(grep -n \"fillable\" app/Models/Credencial*.php)",
+      "Bash(grep -A5 \"fillable\" app/Models/Credencial*.php)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\jerne\\.claude\\projects\\c--Users-jerne-OneDrive-Documents-GitHub-SIAPED-UES"
+      "C:\\Users\\jerne\\.claude\\projects\\c--Users-jerne-OneDrive-Documents-GitHub-SIAPED-UES",
+      "c:\\Users\\jerne\\OneDrive\\Documents\\GitHub\\SIAPED-UES\\resources\\views\\pages\\credenciales"
     ]
   }
 }

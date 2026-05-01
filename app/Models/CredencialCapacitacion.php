@@ -12,7 +12,7 @@ class CredencialCapacitacion extends Model
     protected $fillable = [
         'docente_id', 'tipo', 'nombre', 'institucion',
         'horas', 'fecha_inicio', 'fecha_fin', 'puntaje', 'estado',
-        'archivo_path', 'archivo_descripcion',
+        'archivo_path', 'archivo_descripcion', 'comentario', 'comentario_rechazo',
     ];
 
     protected function casts(): array

@@ -12,7 +12,7 @@ class CredencialProyeccionSocial extends Model
     protected $fillable = [
         'docente_id', 'nombre', 'responsabilidad', 'cobertura',
         'duracion', 'fecha_inicio', 'fecha_fin', 'puntaje', 'estado',
-        'archivo_path', 'archivo_descripcion',
+        'archivo_path', 'archivo_descripcion', 'comentario', 'comentario_rechazo',
     ];
 
     protected function casts(): array

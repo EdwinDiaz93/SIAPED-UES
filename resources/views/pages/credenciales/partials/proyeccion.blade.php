@@ -100,8 +100,14 @@
                                     <span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Aprobado</span>
                                 @elseif ($r->estado === 'rechazado')
                                     <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-medium">Rechazado</span>
+                                    @if ($r->comentario_rechazo)
+                                        <p class="text-xs text-red-600 mt-1 text-left max-w-[10rem]" title="{{ $r->comentario_rechazo }}">{{ Str::limit($r->comentario_rechazo, 60) }}</p>
+                                    @endif
                                 @else
                                     <span class="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700 font-medium">Pendiente</span>
+                                    @if ($r->comentario)
+                                        <p class="text-xs text-gray-400 mt-1 text-left max-w-[10rem]" title="{{ $r->comentario }}">{{ Str::limit($r->comentario, 60) }}</p>
+                                    @endif
                                 @endif
                             </td>
                             <td class="p-3 text-center">
