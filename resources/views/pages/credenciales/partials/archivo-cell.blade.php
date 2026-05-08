@@ -2,7 +2,7 @@
 @if ($r->archivo_path)
     <button
         type="button"
-        @click="$dispatch('abrir-pdf', { url: '{{ Storage::disk('public')->url($r->archivo_path) }}', titulo: '{{ addslashes($r->archivo_descripcion ?? 'Documento') }}' })"
+        @click="$dispatch('abrir-pdf', { url: '{{ route('storage.serve', ['path' => $r->archivo_path]) }}', titulo: '{{ addslashes($r->archivo_descripcion ?? 'Documento') }}' })"
         title="{{ $r->archivo_descripcion ?? 'Ver PDF' }}"
         class="inline-flex items-center gap-1 text-xs text-ues underline hover:opacity-80 cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
