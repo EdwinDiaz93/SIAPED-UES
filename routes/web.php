@@ -1,15 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::view('/', 'welcome')->name('home');
-
-// Sirve archivos de storage/app/public sin depender del symlink
-Route::get('/storage/{path}', function (string $path) {
-    abort_if(!Storage::disk('public')->exists($path), 404);
-    return response()->file(Storage::disk('public')->path($path));
-})->where('path', '.*')->middleware('auth')->name('storage.serve');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');

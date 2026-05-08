@@ -32,7 +32,7 @@
             </p>
         @elseif ($registro?->archivo_path)
             <div class="flex items-center gap-2 mt-1">
-                <a href="{{ route('storage.serve', ['path' => $registro->archivo_path]) }}"
+                <a href="{{ Storage::disk('public')->url($registro->archivo_path) }}"
                    target="_blank"
                    class="text-xs text-ues underline">
                     Ver archivo actual
