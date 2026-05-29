@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('apellidos')->nullable();
             $table->date('fecha_nacimiento')->nullable();
             $table->foreignId('estado_civil')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
-            $table->foreignId('sexo')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
+            $table->foreignId('sexo')->nullable()->constrained('catalog_values')->onDelete('restrict')->onUpdate('set null');
             $table->foreignId('nacionalidad')->nullable()->constrained('catalog_values')->onDelete('set null')->onUpdate('set null');
             $table->string("conyugue")->nullable();
             $table->text('direccion')->nullable();
