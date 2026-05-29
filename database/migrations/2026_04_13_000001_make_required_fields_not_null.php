@@ -12,7 +12,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('apellidos')->nullable(false)->change();
             $table->date('fecha_nacimiento')->nullable(false)->change();
-            $table->unsignedBigInteger('sexo')->nullable(false)->change();
+            $table->unsignedBigInteger('sexo')->nullable()->change();
             $table->unsignedBigInteger('nacionalidad')->nullable(false)->change();
             $table->unsignedBigInteger('estado_civil')->nullable(false)->change();
             $table->text('direccion')->nullable(false)->change();
