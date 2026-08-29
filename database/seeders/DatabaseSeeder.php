@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
         $manageEval       = Permission::create(['name' => 'manage.evaluaciones']);
         $manageReportes   = Permission::create(['name' => 'manage.reportes']);
         $manageProm       = Permission::create(['name' => 'manage.promociones']);
+        $manageCatalogos  = Permission::create(['name' => 'manage.catalogos']);
         $fillJefe         = Permission::create(['name' => 'fill.cuestionario.jefe']);
         $fillAuto         = Permission::create(['name' => 'fill.cuestionario.auto']);
         $fillCred         = Permission::create(['name' => 'fill.credenciales']);
@@ -58,6 +59,7 @@ class DatabaseSeeder extends Seeder
             $manageEval,
             $manageReportes,
             $manageProm,
+            $manageCatalogos,
             $fillCred,
         ]);
 

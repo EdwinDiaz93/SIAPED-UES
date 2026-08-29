@@ -42,6 +42,14 @@ new class extends Component {
         $this->redirectRoute('users.info', ['id' => $id]);
     }
 
+    public function toggleActive($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => ! $user->is_active]);
+
+        unset($this->users);
+    }
+
     public function updatedSelectedRol()
     {
         $this->resetPage();
@@ -79,6 +87,7 @@ new class extends Component {
                     <th scope="col" class="p-4 text-center">Apellidos</th>
                     <th scope="col" class="p-4 text-center">Email</th>
                     <th scope="col" class="p-4 text-center">Telefono</th>
+                    <th scope="col" class="p-4 text-center">Estado</th>
 
                     <th scope="col" class="p-4 text-center">Actions</th>
                 </tr>
@@ -91,34 +100,45 @@ new class extends Component {
                         <td class="p-4 text-center">{{ $user->email ?? '-' }}</td>
                         <td class="p-4 text-center">{{ $user->telefono ?? '-' }}</td>
                         <td class="p-4 text-center">
-                            {{-- @switch($user->getRoleNames()[0]) --}}
-                                {{-- @case('inactivo') --}}
-                                    <div class="relative w-fit">
-                                        <button type="button" wire:click="reviewInfo('{{$user->id}}')"
-                                            class="peer rounded-radius bg-cyan-500 cursor-pointer p-2 font-medium tracking-wide text-white  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-surface-dark-alt dark:border-surface-dark-alt dark:text-on-surface-dark dark:focus-visible:outline-primary-dark"
-                                            aria-describedby="tooltipExample">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="1.5" stroke="currentColor" class="size-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                            </svg>
-                                        </button>
-                                        <div id="tooltipExample"
-                                            class="absolute -top-9 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-sm bg-surface-dark px-2 py-1 text-center text-sm text-on-surface-dark-strong opacity-0 transition-all ease-out peer-hover:opacity-100 peer-focus:opacity-100 dark:bg-surface dark:text-on-surface-strong"
-                                            role="tooltip">Revisar Informacion</div>
-                                    </div>
-                                {{-- @break
+                            @if ($user->is_active)
+                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Activo</span>
+                            @else
+                                <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">Deshabilitado</span>
+                            @endif
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="relative w-fit">
+                                    <button type="button" wire:click="reviewInfo('{{$user->id}}')"
+                                        class="peer rounded-radius bg-cyan-500 cursor-pointer p-2 font-medium tracking-wide text-white  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:bg-surface-dark-alt dark:border-surface-dark-alt dark:text-on-surface-dark dark:focus-visible:outline-primary-dark"
+                                        aria-describedby="tooltipExample">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor" class="size-6">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </button>
+                                    <div id="tooltipExample"
+                                        class="absolute -top-9 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap rounded-sm bg-surface-dark px-2 py-1 text-center text-sm text-on-surface-dark-strong opacity-0 transition-all ease-out peer-hover:opacity-100 peer-focus:opacity-100 dark:bg-surface dark:text-on-surface-strong"
+                                        role="tooltip">Revisar Informacion</div>
+                                </div>
 
-                                @default
-                            @endswitch --}}
+                                @unless ($user->hasRole('inactivo'))
+                                    <button type="button" wire:click="toggleActive('{{ $user->id }}')"
+                                        wire:confirm="{{ $user->is_active ? '¿Deshabilitar a este usuario? No podrá iniciar sesión.' : '¿Habilitar a este usuario?' }}"
+                                        class="rounded-radius cursor-pointer p-2 font-medium tracking-wide text-white {{ $user->is_active ? 'bg-red-600' : 'bg-emerald-600' }}">
+                                        {{ $user->is_active ? 'Deshabilitar' : 'Habilitar' }}
+                                    </button>
+                                @endunless
+                            </div>
                         </td>
 
                     </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-6 text-center text-gray-400">No se encontraron usuarios con el rol seleccionado</td>
+                            <td colspan="6" class="p-6 text-center text-gray-400">No se encontraron usuarios con el rol seleccionado</td>
                         </tr>
                     @endforelse
 

@@ -15,10 +15,12 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Menu')" class="grid">
-                <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
-                    wire:navigate>
-                    {{ __('Dashboard') }}
-                </flux:sidebar.item>
+                @if (auth()->user()->hasRole('admin'))
+                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
+                        wire:navigate>
+                        {{ __('Dashboard') }}
+                    </flux:sidebar.item>
+                @endif
                 @if (auth()->user()->can('account.details'))
                     @can('account.details')
                         <flux:sidebar.item icon="home" :href="route('account.details')"
@@ -74,6 +76,12 @@
                         <flux:sidebar.item icon="arrow-trending-up" :href="route('promociones')"
                             :current="request()->routeIs('promociones')" wire:navigate>
                             {{ __('Promociones') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.catalogos')
+                        <flux:sidebar.item icon="rectangle-stack" :href="route('manage.catalogos')"
+                            :current="request()->routeIs('manage.catalogos')" wire:navigate>
+                            {{ __('Catálogos') }}
                         </flux:sidebar.item>
                     @endcan
                 @endif

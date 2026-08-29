@@ -27,7 +27,8 @@
       "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --screenshot=/tmp/verify_es.png --window-size=1280,900 \"http://127.0.0.1:8123/verify-email\")",
       "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --screenshot=/tmp/login_card.png --window-size=1280,900 \"http://127.0.0.1:8123/login\")",
       "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --screenshot=/tmp/login_padx.png --window-size=1280,900 \"http://127.0.0.1:8123/login\")",
-      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --screenshot=/tmp/login_wide.png --window-size=1280,900 \"http://127.0.0.1:8123/login\")"
+      "Bash(\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --screenshot=/tmp/login_wide.png --window-size=1280,900 \"http://127.0.0.1:8123/login\")",
+      "Bash(cd *)"
     ]
   }
 }

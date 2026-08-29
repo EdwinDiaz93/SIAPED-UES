@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', fn () => auth()->user()->hasRole('admin')
+        ? view('dashboard')
+        : redirect()->route('account.details'))->name('dashboard');
 
 
     Route::livewire('/cuenta', "pages::account_details")->middleware('permission:account.details')->name('account.details');
@@ -26,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/reportes', "pages::reportes.index")->middleware('permission:manage.reportes')->name('reportes');
 
     Route::livewire('/promociones', "pages::promociones.index")->middleware('permission:manage.promociones')->name('promociones');
+
+    Route::livewire('/catalogos', "pages::catalogos.index")->middleware('permission:manage.catalogos')->name('manage.catalogos');
 });
 
 require __DIR__ . '/settings.php';
