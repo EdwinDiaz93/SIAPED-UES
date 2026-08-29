@@ -6,6 +6,7 @@ use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use App\Models\CatalogType;
 use App\Models\CatalogValue;
+use App\Services\AuditLogger;
 use Illuminate\Validation\Rule;
 
 new class extends Component {
@@ -111,10 +112,14 @@ new class extends Component {
         ];
 
         if ($this->editingId) {
-            CatalogValue::where('catalog_type_id', $this->catalogTypeId)->findOrFail($this->editingId)->update($data);
+            $catalogValue = CatalogValue::where('catalog_type_id', $this->catalogTypeId)->findOrFail($this->editingId);
+            $oldValue = $catalogValue->toArray();
+            $catalogValue->update($data);
+            AuditLogger::updated('catalog_values', $catalogValue->id, $oldValue, $catalogValue->fresh()->toArray());
             $this->dispatch('notify', type: 'success', message: 'Elemento actualizado correctamente.');
         } else {
-            CatalogValue::create($data);
+            $catalogValue = CatalogValue::create($data);
+            AuditLogger::created('catalog_values', $catalogValue->id, $catalogValue->toArray());
             $this->dispatch('notify', type: 'success', message: 'Elemento creado correctamente.');
         }
 
@@ -124,7 +129,10 @@ new class extends Component {
 
     public function delete(int $id)
     {
-        CatalogValue::where('catalog_type_id', $this->catalogTypeId)->findOrFail($id)->delete();
+        $catalogValue = CatalogValue::where('catalog_type_id', $this->catalogTypeId)->findOrFail($id);
+        $oldValue = $catalogValue->toArray();
+        $catalogValue->delete();
+        AuditLogger::deleted('catalog_values', $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Elemento eliminado.');
     }
 

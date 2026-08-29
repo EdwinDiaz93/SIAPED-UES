@@ -10,6 +10,7 @@ use App\Models\CredencialProyeccionSocial;
 use App\Models\CredencialEspecializacion;
 use App\Models\CredencialInvestigacion;
 use App\Models\CredencialSeguimiento;
+use App\Services\AuditLogger;
 
 new class extends Component {
     use WithFileUploads;
@@ -201,9 +202,12 @@ new class extends Component {
             if ($this->cap_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
             }
+            $oldValue = $registro->toArray();
             $registro->update($data);
+            AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
         } else {
-            CredencialCapacitacion::create($data);
+            $registro = CredencialCapacitacion::create($data);
+            AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
         }
 
         $this->resetCap();
@@ -230,7 +234,9 @@ new class extends Component {
         $r = CredencialCapacitacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
         if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
+        $oldValue = $r->toArray();
         $r->delete();
+        AuditLogger::deleted($r->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -287,9 +293,12 @@ new class extends Component {
             if ($this->proy_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
             }
+            $oldValue = $registro->toArray();
             $registro->update($data);
+            AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
         } else {
-            CredencialProyeccionSocial::create($data);
+            $registro = CredencialProyeccionSocial::create($data);
+            AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
         }
 
         $this->resetProy();
@@ -316,7 +325,9 @@ new class extends Component {
         $r = CredencialProyeccionSocial::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
         if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
+        $oldValue = $r->toArray();
         $r->delete();
+        AuditLogger::deleted($r->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -371,9 +382,12 @@ new class extends Component {
             if ($this->esp_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
             }
+            $oldValue = $registro->toArray();
             $registro->update($data);
+            AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
         } else {
-            CredencialEspecializacion::create($data);
+            $registro = CredencialEspecializacion::create($data);
+            AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
         }
 
         $this->resetEsp();
@@ -399,7 +413,9 @@ new class extends Component {
         $r = CredencialEspecializacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
         if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
+        $oldValue = $r->toArray();
         $r->delete();
+        AuditLogger::deleted($r->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -460,9 +476,12 @@ new class extends Component {
             if ($this->inv_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
             }
+            $oldValue = $registro->toArray();
             $registro->update($data);
+            AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
         } else {
-            CredencialInvestigacion::create($data);
+            $registro = CredencialInvestigacion::create($data);
+            AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
         }
 
         $this->resetInv();
@@ -490,7 +509,9 @@ new class extends Component {
         $r = CredencialInvestigacion::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
         if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
+        $oldValue = $r->toArray();
         $r->delete();
+        AuditLogger::deleted($r->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -547,9 +568,12 @@ new class extends Component {
             if ($this->seg_archivo && $registro->archivo_path) {
                 Storage::disk('public')->delete($registro->archivo_path);
             }
+            $oldValue = $registro->toArray();
             $registro->update($data);
+            AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
         } else {
-            CredencialSeguimiento::create($data);
+            $registro = CredencialSeguimiento::create($data);
+            AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
         }
 
         $this->resetSeg();
@@ -574,7 +598,9 @@ new class extends Component {
         $r = CredencialSeguimiento::findOrFail($id);
         abort_if($r->estado === 'aprobado', 403);
         if ($r->archivo_path) Storage::disk('public')->delete($r->archivo_path);
+        $oldValue = $r->toArray();
         $r->delete();
+        AuditLogger::deleted($r->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Registro eliminado.');
     }
 
@@ -623,7 +649,9 @@ new class extends Component {
 
         $credencial = $modelo::findOrFail($id);
         abort_if($credencial->docente_id !== $this->docenteId, 403);
+        $oldValue = $credencial->toArray();
         $credencial->update(['estado' => $estado]);
+        AuditLogger::updated($credencial->getTable(), $credencial->id, $oldValue, $credencial->fresh()->toArray());
     }
 };
 ?>

@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
 use App\Models\PeriodoEvaluacion;
+use App\Services\AuditLogger;
 
 new class extends Component {
     use WithPagination;
@@ -107,10 +108,14 @@ new class extends Component {
         ];
 
         if ($this->editingId) {
-            PeriodoEvaluacion::findOrFail($this->editingId)->update($data);
+            $periodo = PeriodoEvaluacion::findOrFail($this->editingId);
+            $oldValue = $periodo->toArray();
+            $periodo->update($data);
+            AuditLogger::updated($periodo->getTable(), $periodo->id, $oldValue, $periodo->fresh()->toArray());
             $this->dispatch('notify', type: 'success', message: 'Periodo actualizado correctamente.');
         } else {
-            PeriodoEvaluacion::create($data);
+            $periodo = PeriodoEvaluacion::create($data);
+            AuditLogger::created($periodo->getTable(), $periodo->id, $periodo->toArray());
             $this->dispatch('notify', type: 'success', message: 'Periodo creado correctamente.');
         }
 
@@ -126,7 +131,10 @@ new class extends Component {
                 return;
             }
         }
-        PeriodoEvaluacion::findOrFail($id)->update(['estado' => $nuevoEstado]);
+        $periodo = PeriodoEvaluacion::findOrFail($id);
+        $oldValue = $periodo->toArray();
+        $periodo->update(['estado' => $nuevoEstado]);
+        AuditLogger::updated($periodo->getTable(), $periodo->id, $oldValue, $periodo->fresh()->toArray());
         $this->dispatch('notify', type: 'success', message: 'Estado actualizado.');
     }
 
@@ -137,7 +145,9 @@ new class extends Component {
             $this->dispatch('notify', type: 'error', message: 'No se puede eliminar un periodo activo.');
             return;
         }
+        $oldValue = $periodo->toArray();
         $periodo->delete();
+        AuditLogger::deleted($periodo->getTable(), $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Periodo eliminado.');
     }
 

@@ -4,6 +4,7 @@ use Livewire\Component;
 use Livewire\Attributes\Url;
 use App\Models\Evaluacion;
 use App\Models\EvaluacionLaborAcademica;
+use App\Services\AuditLogger;
 
 new class extends Component {
 
@@ -68,14 +69,11 @@ new class extends Component {
 
         $nota = EvaluacionLaborAcademica::calcularNotaPonderada('estudiante', $this->criteriosEstudiante);
 
-        EvaluacionLaborAcademica::updateOrCreate(
-            ['evaluacion_id' => $this->evaluacion->id, 'tipo' => 'estudiante'],
-            [
-                'evaluador_id'   => null,
-                'criterios'      => $this->criteriosEstudiante,
-                'nota_ponderada' => $nota,
-            ]
-        );
+        $this->guardarLaborAcademica('estudiante', [
+            'evaluador_id'   => null,
+            'criterios'      => $this->criteriosEstudiante,
+            'nota_ponderada' => $nota,
+        ]);
 
         $this->evaluacion->nota_estudiante = $nota;
         $this->evaluacion->recalcularPuntaje();
@@ -91,14 +89,11 @@ new class extends Component {
 
         $nota = EvaluacionLaborAcademica::calcularNotaPonderada('jefe', $this->criteriosJefe);
 
-        EvaluacionLaborAcademica::updateOrCreate(
-            ['evaluacion_id' => $this->evaluacion->id, 'tipo' => 'jefe'],
-            [
-                'evaluador_id'   => auth()->id(),
-                'criterios'      => $this->criteriosJefe,
-                'nota_ponderada' => $nota,
-            ]
-        );
+        $this->guardarLaborAcademica('jefe', [
+            'evaluador_id'   => auth()->id(),
+            'criterios'      => $this->criteriosJefe,
+            'nota_ponderada' => $nota,
+        ]);
 
         $this->evaluacion->nota_jefe = $nota;
         $this->evaluacion->recalcularPuntaje();
@@ -114,20 +109,36 @@ new class extends Component {
 
         $nota = EvaluacionLaborAcademica::calcularNotaPonderada('auto', $this->criteriosAuto);
 
-        EvaluacionLaborAcademica::updateOrCreate(
-            ['evaluacion_id' => $this->evaluacion->id, 'tipo' => 'auto'],
-            [
-                'evaluador_id'   => $this->evaluacion->docente_id,
-                'criterios'      => $this->criteriosAuto,
-                'nota_ponderada' => $nota,
-            ]
-        );
+        $this->guardarLaborAcademica('auto', [
+            'evaluador_id'   => $this->evaluacion->docente_id,
+            'criterios'      => $this->criteriosAuto,
+            'nota_ponderada' => $nota,
+        ]);
 
         $this->evaluacion->nota_auto = $nota;
         $this->evaluacion->recalcularPuntaje();
         $this->evaluacion->refresh();
 
         $this->dispatch('notify', type: 'success', message: 'Autoevaluación guardada. Nota: ' . number_format($nota, 2));
+    }
+
+    private function guardarLaborAcademica(string $tipo, array $data): void
+    {
+        $existente = EvaluacionLaborAcademica::where('evaluacion_id', $this->evaluacion->id)
+            ->where('tipo', $tipo)
+            ->first();
+
+        if ($existente) {
+            $oldValue = $existente->toArray();
+            $existente->update($data);
+            AuditLogger::updated($existente->getTable(), $existente->id, $oldValue, $existente->fresh()->toArray());
+        } else {
+            $nuevo = EvaluacionLaborAcademica::create(array_merge($data, [
+                'evaluacion_id' => $this->evaluacion->id,
+                'tipo'          => $tipo,
+            ]));
+            AuditLogger::created($nuevo->getTable(), $nuevo->id, $nuevo->toArray());
+        }
     }
 
     public function volver()

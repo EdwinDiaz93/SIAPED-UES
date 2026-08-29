@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Document;
 use Livewire\WithPagination;
 use App\Mail\ApproveMail;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 
@@ -45,6 +46,8 @@ new class extends Component {
         // Quitar rol inactivo y asignar docente
         $this->usuario->removeRole($rolInactivo);
         $this->usuario->assignRole($rolDocente);
+
+        AuditLogger::updated($this->usuario->getTable(), $this->usuario->id, ['role' => $rolInactivo->name], ['role' => $rolDocente->name]);
 
         Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
 

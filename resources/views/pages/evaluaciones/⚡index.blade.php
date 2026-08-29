@@ -6,6 +6,7 @@ use Livewire\WithPagination;
 use App\Models\Evaluacion;
 use App\Models\PeriodoEvaluacion;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 
 new class extends Component {
@@ -66,11 +67,12 @@ new class extends Component {
                 ->exists();
 
             if (!$existe) {
-                Evaluacion::create([
+                $evaluacion = Evaluacion::create([
                     'docente_id' => $docente->id,
                     'periodo_id' => $this->periodoSeleccionado,
                     'estado'     => 'pendiente',
                 ]);
+                AuditLogger::created($evaluacion->getTable(), $evaluacion->id, $evaluacion->toArray());
                 $creadas++;
             }
         }

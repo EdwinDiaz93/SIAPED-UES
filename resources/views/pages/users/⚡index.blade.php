@@ -3,6 +3,7 @@
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 use Livewire\WithPagination;
 
@@ -45,7 +46,9 @@ new class extends Component {
     public function toggleActive($id)
     {
         $user = User::findOrFail($id);
+        $oldValue = ['is_active' => $user->is_active];
         $user->update(['is_active' => ! $user->is_active]);
+        AuditLogger::updated('users', $user->id, $oldValue, ['is_active' => $user->is_active]);
 
         unset($this->users);
     }

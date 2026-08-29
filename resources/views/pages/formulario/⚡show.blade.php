@@ -6,6 +6,7 @@ use App\Models\PeriodoEvaluacion;
 use App\Models\FormularioConsolidado;
 use App\Models\SolicitudPromocion;
 use App\Services\PuntajeEscalafonarioCalculator;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 
 new class extends Component {
@@ -66,7 +67,7 @@ new class extends Component {
             $this->guardarFormulario();
         }
 
-        SolicitudPromocion::create([
+        $solicitud = SolicitudPromocion::create([
             'docente_id'          => $this->docenteId,
             'periodo_id'          => is_numeric($this->periodoId) ? (int) $this->periodoId : null,
             'formulario_id'       => $this->guardadoId,
@@ -76,6 +77,7 @@ new class extends Component {
             'puntaje_requerido'   => $this->resultado['total_maximo'],
             'estado'              => 'pendiente',
         ]);
+        AuditLogger::created($solicitud->getTable(), $solicitud->id, $solicitud->toArray());
 
         $this->yaSolicito = true;
         $this->dispatch('notify', type: 'success',
@@ -86,21 +88,31 @@ new class extends Component {
     {
         if (!$this->resultado) return;
 
-        $formulario = FormularioConsolidado::updateOrCreate(
-            [
-                'docente_id' => $this->docenteId,
-                'periodo_id' => (is_numeric($this->periodoId)) ? (int) $this->periodoId : null,
-            ],
-            [
-                'generado_por'        => auth()->id(),
-                'aspectos'            => $this->resultado['aspectos'],
-                'total_ganado'        => $this->resultado['total_ganado'],
-                'total_maximo'        => $this->resultado['total_maximo'],
-                'categoria_actual'    => $this->resultado['categoria_actual'],
-                'siguiente_categoria' => $this->resultado['siguiente_categoria'],
-                'cumple_ascenso'      => $this->resultado['cumple_ascenso'],
-            ]
-        );
+        $criterio = [
+            'docente_id' => $this->docenteId,
+            'periodo_id' => (is_numeric($this->periodoId)) ? (int) $this->periodoId : null,
+        ];
+        $data = [
+            'generado_por'        => auth()->id(),
+            'aspectos'            => $this->resultado['aspectos'],
+            'total_ganado'        => $this->resultado['total_ganado'],
+            'total_maximo'        => $this->resultado['total_maximo'],
+            'categoria_actual'    => $this->resultado['categoria_actual'],
+            'siguiente_categoria' => $this->resultado['siguiente_categoria'],
+            'cumple_ascenso'      => $this->resultado['cumple_ascenso'],
+        ];
+
+        $existente = FormularioConsolidado::where($criterio)->first();
+
+        if ($existente) {
+            $oldValue = $existente->toArray();
+            $existente->update($data);
+            AuditLogger::updated($existente->getTable(), $existente->id, $oldValue, $existente->fresh()->toArray());
+            $formulario = $existente;
+        } else {
+            $formulario = FormularioConsolidado::create(array_merge($criterio, $data));
+            AuditLogger::created($formulario->getTable(), $formulario->id, $formulario->toArray());
+        }
 
         $this->guardadoId = $formulario->id;
         $this->dispatch('notify', type: 'success', message: 'Formulario consolidado guardado.');

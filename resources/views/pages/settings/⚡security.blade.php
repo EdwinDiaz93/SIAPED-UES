@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\PasswordValidationRules;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
@@ -56,9 +57,13 @@ new #[Title('Security settings')] class extends Component {
             throw $e;
         }
 
-        Auth::user()->update([
+        $user = Auth::user();
+        $user->update([
             'password' => $validated['password'],
         ]);
+
+        // Nunca se registra el valor del password, solo el hecho de que cambió.
+        AuditLogger::updated($user->getTable(), $user->id, ['password' => '********'], ['password' => '********']);
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

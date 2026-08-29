@@ -8,6 +8,7 @@ use App\Models\CatalogValue;
 use App\Models\User;
 use App\Models\Document;
 use App\Models\Institution;
+use App\Services\AuditLogger;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
@@ -42,6 +43,8 @@ new class extends Component {
 
         $this->userForm->validate();
 
+        $oldValue = $user->toArray();
+
         $user->name = $this->userForm->nombres;
         $user->apellidos = $this->userForm->apellidos;
         $user->fecha_nacimiento = $this->userForm->fecha_nacimiento;
@@ -53,6 +56,8 @@ new class extends Component {
         $user->telefono = $this->userForm->telefono;
         $user->save();
 
+        AuditLogger::updated($user->getTable(), $user->id, $oldValue, $user->fresh()->toArray());
+
         $this->dispatch('notify', type: 'success', message: 'Datos de usuario guardados correctamente');
     }
 
@@ -60,7 +65,7 @@ new class extends Component {
     {
         $this->documentForm->validate();
 
-        Document::create([
+        $document = Document::create([
             'user_id' => auth()->user()->id,
             'document_type_id' => $this->documentForm->document_type,
             'value' => $this->documentForm->value,
@@ -69,6 +74,8 @@ new class extends Component {
             'fecha_expiracion' => $this->documentForm->fecha_expiracion,
             'institucion' => $this->documentForm->institucion,
         ]);
+
+        AuditLogger::created($document->getTable(), $document->id, $document->toArray());
 
         $this->dispatch('notify', type: 'success', message: 'Documentos de usuario guardados correctamente');
         $this->documentForm->reset();
@@ -79,7 +86,7 @@ new class extends Component {
         $this->institutionForm->validate();
         $institution = Institution::where('user_id', auth()->user()->id)->first();
         if ($institution == null) {
-            Institution::create([
+            $institution = Institution::create([
                 'user_id'              => auth()->user()->id,
                 'grado_id'             => $this->institutionForm->grado_academico,
                 'institucion_id'       => $this->institutionForm->institucion_educativa,
@@ -90,7 +97,9 @@ new class extends Component {
                 'fecha_ingreso'        => $this->institutionForm->fecha_ingreso,
                 'tipo_nombramiento_id' => $this->institutionForm->tipo_nombramiento,
             ]);
+            AuditLogger::created($institution->getTable(), $institution->id, $institution->toArray());
         } else {
+            $oldValue = $institution->toArray();
             $institution->grado_id             = $this->institutionForm->grado_academico;
             $institution->institucion_id        = $this->institutionForm->institucion_educativa;
             $institution->escuela_id            = $this->institutionForm->escuela_unidad;
@@ -100,6 +109,7 @@ new class extends Component {
             $institution->fecha_ingreso         = $this->institutionForm->fecha_ingreso;
             $institution->tipo_nombramiento_id  = $this->institutionForm->tipo_nombramiento;
             $institution->save();
+            AuditLogger::updated($institution->getTable(), $institution->id, $oldValue, $institution->fresh()->toArray());
         }
         $this->dispatch('notify', type: 'success', message: 'Datos institucionales guardados correctamente');
     }

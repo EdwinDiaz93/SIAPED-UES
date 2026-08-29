@@ -6,6 +6,7 @@ use Livewire\WithPagination;
 use App\Models\SolicitudPromocion;
 use App\Models\CatalogValue;
 use App\Models\Institution;
+use App\Services\AuditLogger;
 
 new class extends Component {
     use WithPagination;
@@ -61,6 +62,7 @@ new class extends Component {
         }
 
         $nuevoEstado = $this->accion === 'aprobar' ? 'aprobada' : 'rechazada';
+        $oldValue = $solicitud->toArray();
 
         $solicitud->update([
             'estado'         => $nuevoEstado,
@@ -68,6 +70,8 @@ new class extends Component {
             'fecha_revision' => now(),
             'observaciones'  => $this->observaciones ?: null,
         ]);
+
+        AuditLogger::updated($solicitud->getTable(), $solicitud->id, $oldValue, $solicitud->fresh()->toArray());
 
         // Si se aprueba → actualizar categoría del docente
         if ($nuevoEstado === 'aprobada') {
