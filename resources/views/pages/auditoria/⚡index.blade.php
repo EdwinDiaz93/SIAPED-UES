@@ -5,6 +5,8 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use App\Models\AuditLog;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 new class extends Component {
     use WithPagination;
@@ -25,6 +27,10 @@ new class extends Component {
     public string $hasta = '';
 
     public ?int $detalleId = null;
+
+    public bool $mostrarModalReporte = false;
+
+    public ?int $anioReporte = null;
 
     #[Computed]
     public function logs()
@@ -74,12 +80,70 @@ new class extends Component {
     public function updatedFiltroUsuario() { $this->resetPage(); }
     public function updatedDesde()         { $this->resetPage(); }
     public function updatedHasta()         { $this->resetPage(); }
+
+    public function abrirModalReporte()
+    {
+        $this->anioReporte = (int) now()->year;
+        $this->mostrarModalReporte = true;
+    }
+
+    public function cerrarModalReporte()
+    {
+        $this->mostrarModalReporte = false;
+    }
+
+    public function generarReportePdf()
+    {
+        $this->validate([
+            'anioReporte' => 'required|integer|min:2000|max:' . (now()->year + 1),
+        ], [
+            'anioReporte.required' => 'Debes indicar el año del reporte',
+            'anioReporte.integer' => 'El año debe ser un número válido',
+            'anioReporte.min' => 'El año no es válido',
+            'anioReporte.max' => 'El año no puede ser mayor al próximo año',
+        ]);
+
+        $logs = AuditLog::with('user')
+            ->whereYear('created_at', $this->anioReporte)
+            ->when($this->filtroTabla, fn ($q) => $q->where('table_name', $this->filtroTabla))
+            ->when($this->filtroAccion, fn ($q) => $q->where('action', $this->filtroAccion))
+            ->when($this->filtroUsuario, fn ($q) => $q->where('user_id', $this->filtroUsuario))
+            ->orderBy('created_at')
+            ->get();
+
+        $filtros = [];
+        if ($this->filtroTabla)   $filtros[] = 'Tabla: ' . $this->filtroTabla;
+        if ($this->filtroAccion)  $filtros[] = 'Acción: ' . (['CREATE' => 'Creación', 'EDIT' => 'Edición', 'DELETE' => 'Eliminación'][$this->filtroAccion] ?? $this->filtroAccion);
+        if ($this->filtroUsuario) $filtros[] = 'Usuario: ' . (User::find($this->filtroUsuario)?->name ?? '');
+
+        $pdf = Pdf::loadView('pdf.bitacora', [
+            'logs' => $logs,
+            'anio' => $this->anioReporte,
+            'filtrosTexto' => implode(' · ', $filtros),
+        ])->setPaper('a4', 'landscape');
+
+        $this->mostrarModalReporte = false;
+
+        return response()->streamDownload(
+            fn () => print($pdf->output()),
+            'bitacora-' . $this->anioReporte . '.pdf'
+        );
+    }
 };
 ?>
 
 <div class="p-4">
 
-    <h1 class="text-2xl font-bold mb-6">Bitácora de Auditoría</h1>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Bitácora de Auditoría</h1>
+        <button wire:click="abrirModalReporte"
+            class="flex items-center gap-2 px-4 py-2 bg-ues text-white rounded-lg cursor-pointer hover:opacity-90 text-sm font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            Generar reporte PDF
+        </button>
+    </div>
 
     {{-- Filtros --}}
     <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -217,6 +281,40 @@ new class extends Component {
                     <button wire:click="cerrarDetalle"
                         class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm">
                         Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal de reporte PDF --}}
+    @if ($mostrarModalReporte)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-xl w-full max-w-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold">Generar reporte PDF</h2>
+                    <button wire:click="cerrarModalReporte" class="text-gray-400 hover:text-gray-600 cursor-pointer">✕</button>
+                </div>
+
+                <p class="text-sm text-gray-500 mb-4">
+                    Se incluirán los registros del año indicado, aplicando los filtros de Tabla, Acción y Usuario que estén activos actualmente en la pantalla.
+                </p>
+
+                <label class="text-xs font-semibold">Año</label>
+                <input type="number" wire:model="anioReporte" min="2000" max="{{ now()->year + 1 }}"
+                    class="w-full mt-1 border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark">
+                @error('anioReporte')
+                    <span class="error">{{ $message }}</span>
+                @enderror
+
+                <div class="flex justify-end gap-2 mt-6">
+                    <button wire:click="cerrarModalReporte"
+                        class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm">
+                        Cancelar
+                    </button>
+                    <button wire:click="generarReportePdf"
+                        class="px-4 py-2 bg-ues text-white rounded-lg cursor-pointer hover:opacity-90 text-sm font-semibold">
+                        Generar
                     </button>
                 </div>
             </div>
