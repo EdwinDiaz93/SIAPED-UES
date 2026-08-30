@@ -20,6 +20,8 @@ new class extends Component {
 
     public $usuario = null;
 
+    public $rolAprobacion = 'docente';
+
     public function mount()
     {
         // 1. Validamos manualmente para poder controlar el fallo
@@ -38,16 +40,68 @@ new class extends Component {
         }
     }
 
+    public function rolesAprobables()
+    {
+        return Role::whereNotIn('name', ['inactivo', 'admin'])->orderBy('name')->get();
+    }
+
+    /**
+     * Campos/secciones que el usuario debe completar antes de poder ser aprobado.
+     */
+    public function camposFaltantes(): array
+    {
+        $u = $this->usuario;
+        $faltantes = [];
+
+        foreach ([
+            'apellidos'        => 'Apellidos',
+            'sexo'              => 'Sexo',
+            'fecha_nacimiento' => 'Fecha de nacimiento',
+            'nacionalidad'     => 'Nacionalidad',
+            'estado_civil'     => 'Estado civil',
+            'direccion'        => 'Dirección',
+            'telefono'         => 'Teléfono',
+        ] as $campo => $etiqueta) {
+            if (blank($u->{$campo})) {
+                $faltantes[] = $etiqueta;
+            }
+        }
+
+        if (!$u->institution) {
+            $faltantes[] = 'Datos institucionales';
+        }
+
+        if ($u->documents->isEmpty()) {
+            $faltantes[] = 'Documentos';
+        }
+
+        return $faltantes;
+    }
+
     public function approveUser()
     {
-        $rolDocente = Role::where('name', 'docente')->firstOrFail();
+        $faltantes = $this->camposFaltantes();
+        if (count($faltantes) > 0) {
+            $this->dispatch('notify', type: 'error',
+                message: 'No se puede aprobar: el usuario debe completar antes: ' . implode(', ', $faltantes) . '.');
+            return;
+        }
+
+        // Solo admin puede elegir el rol de aprobación; cualquier otro rol
+        // (ej. comité) únicamente puede aprobar con el rol por defecto,
+        // sin importar qué valor llegue manipulado desde el cliente.
+        if (!auth()->user()->hasRole('admin')) {
+            $this->rolAprobacion = 'docente';
+        }
+
+        $rolSeleccionado = Role::where('name', $this->rolAprobacion)->whereNotIn('name', ['inactivo', 'admin'])->firstOrFail();
         $rolInactivo = Role::where('name', 'inactivo')->firstOrFail();
 
-        // Quitar rol inactivo y asignar docente
+        // Quitar rol inactivo y asignar el rol seleccionado
         $this->usuario->removeRole($rolInactivo);
-        $this->usuario->assignRole($rolDocente);
+        $this->usuario->assignRole($rolSeleccionado);
 
-        AuditLogger::updated($this->usuario->getTable(), $this->usuario->id, ['role' => $rolInactivo->name], ['role' => $rolDocente->name]);
+        AuditLogger::updated($this->usuario->getTable(), $this->usuario->id, ['role' => $rolInactivo->name], ['role' => $rolSeleccionado->name]);
 
         Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
 
@@ -86,19 +140,53 @@ new class extends Component {
             @endif
 
             @if ($this->usuario->hasRole('inactivo'))
-                <button class="p-2 bg-ues flex text-white rounded-lg cursor-pointer" wire:click="approveUser">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                    </svg>
-                    <span class="ml-3">Aprobar Usuario</span>
-                </button>
+                <div x-data="{ rol: @entangle('rolAprobacion') }" class="flex items-center gap-2">
+                    @if (auth()->user()->hasRole('admin'))
+                        <select x-model="rol"
+                            class="rounded-lg border border-outline px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark">
+                            @foreach ($this->rolesAprobables() as $rolOpcion)
+                                <option value="{{ $rolOpcion->name }}">{{ $rolOpcion->name }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <span class="rounded-lg border border-outline px-3 py-2 text-sm text-gray-500 dark:border-outline-dark">
+                            Se aprobará como: <strong>{{ $rolAprobacion }}</strong>
+                        </span>
+                    @endif
+                    @if (count($this->camposFaltantes()) > 0)
+                        <button type="button" disabled title="Completa los datos faltantes antes de aprobar"
+                            class="p-2 bg-gray-300 flex text-white rounded-lg cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                            </svg>
+                            <span class="ml-3">Aprobar Usuario</span>
+                        </button>
+                    @else
+                        <button type="button"
+                            x-on:click="confirmAction('El usuario será aprobado como ' + rol + '.', () => $wire.approveUser())"
+                            class="p-2 bg-ues flex text-white rounded-lg cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                            </svg>
+                            <span class="ml-3">Aprobar Usuario</span>
+                        </button>
+                    @endif
+                </div>
             @endif
 
 
         </div>
     </div>
+
+    @if ($this->usuario->hasRole('inactivo') && count($this->camposFaltantes()) > 0)
+        <div class="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+            Este usuario aún no puede ser aprobado. Le falta completar: <strong>{{ implode(', ', $this->camposFaltantes()) }}</strong>.
+        </div>
+    @endif
 
 
     <h3 class="text-4xl flex  items-center mt-4"> <svg xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -120,19 +208,19 @@ new class extends Component {
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Sexo:</label>
-            <p>{{ $this->usuario->selectedSex->name }}</p>
+            <p>{{ $this->usuario->selectedSex?->name ?? '-' }}</p>
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Fecha De Nacimiento:</label>
-            <p>{{ $this->usuario->fecha_nacimiento }}</p>
+            <p>{{ $this->usuario->fecha_nacimiento ?? '-' }}</p>
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Nacionalidad:</label>
-            <p>{{ $this->usuario->selectedNacionalidad->name }}</p>
+            <p>{{ $this->usuario->selectedNacionalidad?->name ?? '-' }}</p>
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Estado Civil:</label>
-            <p>{{ $this->usuario->estadoCivil->name }}</p>
+            <p>{{ $this->usuario->estadoCivil?->name ?? '-' }}</p>
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Conyugue:</label>
@@ -140,7 +228,7 @@ new class extends Component {
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Direccion:</label>
-            <p>{{ strlen($this->usuario->direccion) > 0 ? $this->usuario->direccion : '-' }}</p>
+            <p>{{ filled($this->usuario->direccion) ? $this->usuario->direccion : '-' }}</p>
         </div>
         <div class="grid grid-cols-1">
             <label class="font-bold">Telefono:</label>
@@ -177,7 +265,7 @@ new class extends Component {
                 <tbody class="divide-y divide-outline dark:divide-outline-dark">
                     @forelse ($this->usuario->documents as $document)
                         <tr>
-                            <td class="p-4">{{ $document->documentType->name }}</td>
+                            <td class="p-4">{{ $document->documentType?->name ?? '-' }}</td>
                             <td class="p-4">{{ $document->value }}</td>
                             <td class="p-4">{{ $document->fecha_expedicion ?? '-' }}</td>
                             <td class="p-4">{{ $document->lugar_expedicion ?? '-' }}</td>
@@ -209,44 +297,50 @@ new class extends Component {
         <span class="font-bold ml-3">Datos Academicos </span>
     </h3>
 
-    <div class="grid grid-cols-3 gap-4 shadow-xl p-4 rounded-xl ">
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Grado Academico:</label>
-            <p>{{ $this->usuario->institution->grado->name }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Institucion:</label>
-            <p>{{ $this->usuario->institution->institucion->name }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Fecha De Graduacion:</label>
-            <p>{{ $this->usuario->institution->fecha_graduacion }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Escuela o Unidad:</label>
-            <p>{{ $this->usuario->institution->escuela->name }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Categoria Escalafonaria:</label>
-            <p>{{ $this->usuario->institution->categoria->name }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Area de desempeño:</label>
-            <p>{{ $this->usuario->institution->area->name }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Fecha de ingreso a la UES:</label>
-            <p>{{ $this->usuario->institution->fecha_ingreso ?? '-' }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Tipo de nombramiento:</label>
-            <p>{{ $this->usuario->institution->tipoNombramiento->name ?? '-' }}</p>
-        </div>
-        <div class="grid grid-cols-1">
-            <label class="font-bold">Puntaje Tiempo de Servicio:</label>
-            <p>{{ $this->usuario->institution->puntaje_tiempo_servicio ?? '0' }} pts</p>
-        </div>
+    @if ($this->usuario->institution)
+        <div class="grid grid-cols-3 gap-4 shadow-xl p-4 rounded-xl ">
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Grado Academico:</label>
+                <p>{{ $this->usuario->institution->grado?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Institucion:</label>
+                <p>{{ $this->usuario->institution->institucion?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Fecha De Graduacion:</label>
+                <p>{{ $this->usuario->institution->fecha_graduacion ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Escuela o Unidad:</label>
+                <p>{{ $this->usuario->institution->escuela?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Categoria Escalafonaria:</label>
+                <p>{{ $this->usuario->institution->categoria?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Area de desempeño:</label>
+                <p>{{ $this->usuario->institution->area?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Fecha de ingreso a la UES:</label>
+                <p>{{ $this->usuario->institution->fecha_ingreso ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Tipo de nombramiento:</label>
+                <p>{{ $this->usuario->institution->tipoNombramiento?->name ?? '-' }}</p>
+            </div>
+            <div class="grid grid-cols-1">
+                <label class="font-bold">Puntaje Tiempo de Servicio:</label>
+                <p>{{ $this->usuario->institution->puntaje_tiempo_servicio ?? '0' }} pts</p>
+            </div>
 
-    </div>
+        </div>
+    @else
+        <div class="p-4 rounded-xl border border-outline dark:border-outline-dark text-center text-gray-500">
+            Este usuario todavía no ha completado sus datos institucionales.
+        </div>
+    @endif
 
 </div>

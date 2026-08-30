@@ -65,6 +65,12 @@
                                 {{ __('Mi Formulario') }}
                             </flux:sidebar.item>
                         @endcan
+                        @can('fill.cuestionario.auto')
+                            <flux:sidebar.item icon="pencil-square" :href="route('evaluaciones.cuestionario')"
+                                :current="request()->routeIs('evaluaciones.cuestionario')" wire:navigate>
+                                {{ __('Mi Autoevaluación') }}
+                            </flux:sidebar.item>
+                        @endcan
                     @endcannot
                     @can('manage.reportes')
                         <flux:sidebar.item icon="chart-bar" :href="route('reportes')"

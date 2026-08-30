@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use App\Models\Evaluacion;
 use App\Models\EvaluacionLaborAcademica;
@@ -9,7 +10,7 @@ use App\Services\AuditLogger;
 new class extends Component {
 
     #[Url]
-    public int $id;
+    public ?int $id = null;
 
     public ?Evaluacion $evaluacion = null;
 
@@ -21,20 +22,43 @@ new class extends Component {
     public array $criteriosJefe       = [];
     public array $criteriosAuto       = [];
 
+    #[Computed]
+    public function esAdmin(): bool
+    {
+        return auth()->user()->hasRole('admin');
+    }
+
     public function mount()
     {
-        $this->evaluacion = Evaluacion::with([
+        $query = Evaluacion::with([
             'docente.institution.categoria',
             'docente.institution.escuela',
             'cuestionarioEstudiante',
             'cuestionarioJefe',
             'cuestionarioAuto',
-        ])->findOrFail($this->id);
+        ]);
 
-        // Inicializar criterios con ceros o valores existentes
-        $this->criteriosEstudiante = $this->cargarCriterios('estudiante');
-        $this->criteriosJefe       = $this->cargarCriterios('jefe');
-        $this->criteriosAuto       = $this->cargarCriterios('auto');
+        if ($this->id) {
+            $this->evaluacion = $query->findOrFail($this->id);
+            // Un docente solo puede abrir su propia evaluación, aunque manipule el id en la URL.
+            abort_if(!$this->esAdmin && $this->evaluacion->docente_id !== auth()->id(), 403);
+        } else {
+            // Sin id: el docente entra a su propia autoevaluación del periodo activo.
+            abort_if($this->esAdmin, 404);
+            $this->evaluacion = $query->where('docente_id', auth()->id())
+                ->whereHas('periodo', fn ($q) => $q->where('estado', 'activo'))
+                ->latest('id')
+                ->first();
+        }
+
+        $this->tab = $this->esAdmin ? 'estudiante' : 'auto';
+
+        if ($this->evaluacion) {
+            // Inicializar criterios con ceros o valores existentes
+            $this->criteriosEstudiante = $this->cargarCriterios('estudiante');
+            $this->criteriosJefe       = $this->cargarCriterios('jefe');
+            $this->criteriosAuto       = $this->cargarCriterios('auto');
+        }
     }
 
     private function cargarCriterios(string $tipo): array
@@ -64,6 +88,8 @@ new class extends Component {
 
     public function guardarEstudiante()
     {
+        abort_if(!$this->esAdmin, 403);
+
         $this->resetErrorBag();
         if (!$this->validarCriterios($this->criteriosEstudiante, 'estudiante')) return;
 
@@ -84,6 +110,8 @@ new class extends Component {
 
     public function guardarJefe()
     {
+        abort_if(!$this->esAdmin, 403);
+
         $this->resetErrorBag();
         if (!$this->validarCriterios($this->criteriosJefe, 'jefe')) return;
 
@@ -143,7 +171,12 @@ new class extends Component {
 
     public function volver()
     {
-        $this->redirectRoute('manage.evaluaciones');
+        if ($this->esAdmin) {
+            $this->redirectRoute('manage.evaluaciones');
+            return;
+        }
+
+        $this->redirectRoute('formulario.show', ['docenteId' => auth()->id()]);
     }
 };
 ?>
@@ -162,6 +195,12 @@ new class extends Component {
         </button>
         <h1 class="text-2xl font-bold">Evaluación Labor Académica</h1>
     </div>
+
+    @if (!$evaluacion)
+        <div class="p-6 rounded-xl border border-outline dark:border-outline-dark text-center text-gray-500">
+            Todavía no tienes una evaluación generada para el periodo activo. Contacta al administrador.
+        </div>
+    @else
 
     {{-- Info del docente --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-surface-alt dark:bg-surface-dark-alt rounded-xl mb-6 shadow">
@@ -221,10 +260,12 @@ new class extends Component {
     {{-- Tabs de cuestionarios --}}
     <div x-data="{ tab: @entangle('tab') }">
         <div class="flex gap-2 border-b border-outline dark:border-outline-dark mb-4">
-            @foreach ([
+            @foreach ($this->esAdmin ? [
                 ['estudiante', 'Cuestionario 1 — Estudiantes', $evaluacion->nota_estudiante],
                 ['jefe',       'Cuestionario 2 — Jefe Inmediato', $evaluacion->nota_jefe],
                 ['auto',       'Cuestionario 3 — Autoevaluación', $evaluacion->nota_auto],
+            ] : [
+                ['auto',       'Autoevaluación', $evaluacion->nota_auto],
             ] as [$key, $label, $nota])
                 <button
                     x-on:click="tab = '{{ $key }}'"
@@ -242,6 +283,7 @@ new class extends Component {
             @endforeach
         </div>
 
+        @if ($this->esAdmin)
         {{-- Cuestionario 1: Estudiantes --}}
         <div x-show="tab === 'estudiante'" x-cloak>
             @include('pages.evaluaciones.partials.cuestionario-form', [
@@ -267,6 +309,7 @@ new class extends Component {
                 'titulo'     => 'Evaluación por Jefe Inmediato',
             ])
         </div>
+        @endif
 
         {{-- Cuestionario 3: Autoevaluación --}}
         <div x-show="tab === 'auto'" x-cloak>
@@ -281,5 +324,7 @@ new class extends Component {
             ])
         </div>
     </div>
+
+    @endif
 
 </div>

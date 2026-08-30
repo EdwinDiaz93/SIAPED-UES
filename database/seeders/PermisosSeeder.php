@@ -36,6 +36,7 @@ class PermisosSeeder extends Seeder
         $admin   = Role::where('name', 'admin')->first();
         $jefe    = Role::where('name', 'Jefe')->first();
         $docente = Role::where('name', 'docente')->first();
+        $comite  = Role::firstOrCreate(['name' => 'comite']);
         $inactivo= Role::where('name', 'inactivo')->first();
 
         if ($admin) {
@@ -67,6 +68,11 @@ class PermisosSeeder extends Seeder
                 'fill.cuestionario.jefe',
             ]);
         }
+
+        $comite->syncPermissions([
+            'account.details',
+            'manage.users',
+        ]);
 
         if ($inactivo) {
             $inactivo->syncPermissions(['account.details']);

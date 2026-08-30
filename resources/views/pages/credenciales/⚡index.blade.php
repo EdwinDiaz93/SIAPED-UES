@@ -82,7 +82,7 @@ new class extends Component {
     #[Computed]
     public function esAdmin(): bool
     {
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasAnyRole(['admin', 'comite']);
     }
 
     // ── Computed: listas ──────────────────────────────────────────────────────
@@ -165,13 +165,13 @@ new class extends Component {
             'cap_horas'        => 'required_if:cap_tipo,curso|nullable|integer|min:1',
             'cap_fecha_inicio' => 'required|date',
             'cap_fecha_fin'    => 'required|date|after_or_equal:cap_fecha_inicio',
-            'cap_archivo'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'cap_archivo'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'cap_archivo_desc' => 'nullable|string|max:255',
         ], [
             'cap_horas.required_if'        => 'Las horas son requeridas para cursos.',
             'cap_fecha_fin.after_or_equal' => 'La fecha fin debe ser posterior al inicio.',
             'cap_archivo.mimes'            => 'Solo se permiten archivos PDF, JPG o PNG.',
-            'cap_archivo.max'              => 'El archivo no debe superar 5 MB.',
+            'cap_archivo.max'              => 'El archivo no debe superar 10 MB.',
         ]);
 
         $puntaje = CredencialCapacitacion::calcularPuntaje(
@@ -260,8 +260,12 @@ new class extends Component {
             'proy_duracion'        => 'required|in:lte3meses,3a6meses,gt6meses',
             'proy_fecha_inicio'    => 'required|date',
             'proy_fecha_fin'       => 'required|date|after_or_equal:proy_fecha_inicio',
-            'proy_archivo'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'proy_archivo'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'proy_archivo_desc'    => 'nullable|string|max:255',
+        ], [
+            'proy_fecha_fin.after_or_equal' => 'La fecha fin debe ser posterior al inicio.',
+            'proy_archivo.mimes'            => 'Solo se permiten archivos PDF, JPG o PNG.',
+            'proy_archivo.max'              => 'El archivo no debe superar 10 MB.',
         ]);
 
         $puntaje = CredencialProyeccionSocial::calcularPuntaje(
@@ -351,8 +355,12 @@ new class extends Component {
             'esp_institucion' => 'nullable|string|max:255',
             'esp_horas'       => 'required_if:esp_tipo,curso|nullable|integer|min:1',
             'esp_fecha'       => 'required|date',
-            'esp_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'esp_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'esp_archivo_desc'=> 'nullable|string|max:255',
+        ], [
+            'esp_horas.required_if' => 'Las horas son requeridas para cursos.',
+            'esp_archivo.mimes'     => 'Solo se permiten archivos PDF, JPG o PNG.',
+            'esp_archivo.max'       => 'El archivo no debe superar 10 MB.',
         ]);
 
         $puntaje = CredencialEspecializacion::calcularPuntaje(
@@ -440,8 +448,11 @@ new class extends Component {
             'inv_participacion'     => 'required_if:inv_tipo,proyecto',
             'inv_duracion_proyecto' => 'required_if:inv_tipo,proyecto',
             'inv_tipo_publicacion'  => 'required_if:inv_tipo,publicacion',
-            'inv_archivo'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'inv_archivo'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'inv_archivo_desc'      => 'nullable|string|max:255',
+        ], [
+            'inv_archivo.mimes' => 'Solo se permiten archivos PDF, JPG o PNG.',
+            'inv_archivo.max'   => 'El archivo no debe superar 10 MB.',
         ]);
 
         $puntaje = CredencialInvestigacion::calcularPuntaje([
@@ -534,12 +545,14 @@ new class extends Component {
             'seg_descripcion' => 'required|string|max:255',
             'seg_horas'       => 'required_if:seg_tipo,curso|nullable|integer|min:20|max:60',
             'seg_fecha'       => 'required|date',
-            'seg_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'seg_archivo'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'seg_archivo_desc'=> 'nullable|string|max:255',
         ], [
             'seg_horas.required_if' => 'Las horas son requeridas para cursos.',
             'seg_horas.min'         => 'Los cursos deben tener mínimo 20 horas.',
             'seg_horas.max'         => 'Los cursos de seguimiento tienen máximo 60 horas.',
+            'seg_archivo.mimes'     => 'Solo se permiten archivos PDF, JPG o PNG.',
+            'seg_archivo.max'       => 'El archivo no debe superar 10 MB.',
         ]);
 
         $puntaje = CredencialSeguimiento::calcularPuntaje(

@@ -18,7 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/periodos', "pages::periodos.index")->middleware('permission:manage.periodos')->name('manage.periodos');
 
     Route::livewire('/evaluaciones', "pages::evaluaciones.index")->middleware('permission:manage.evaluaciones')->name('manage.evaluaciones');
-    Route::livewire('/evaluaciones/cuestionario', "pages::evaluaciones.cuestionario")->middleware('permission:manage.evaluaciones')->name('evaluaciones.cuestionario');
+    Route::livewire('/evaluaciones/cuestionario', "pages::evaluaciones.cuestionario")->middleware('permission:manage.evaluaciones|fill.cuestionario.auto')->name('evaluaciones.cuestionario');
 
     Route::livewire('/credenciales', "pages::credenciales.index")->middleware('permission:fill.credenciales|manage.users')->name('credenciales');
     Route::livewire('/credenciales/revision', "pages::credenciales.revision")->middleware('permission:manage.users')->name('credenciales.revision');

@@ -37,6 +37,9 @@ class DatabaseSeeder extends Seeder
         $jefeInmediato = Role::create(([
             "name" => "Jefe"
         ]));
+        $comite = Role::create(([
+            "name" => "comite"
+        ]));
 
         // ── Permisos base ─────────────────────────────────────────────────────
         $account_details  = Permission::create(['name' => 'account.details']);
@@ -75,6 +78,11 @@ class DatabaseSeeder extends Seeder
         $jefeInmediato->givePermissionTo([
             $account_details,
             $fillJefe,
+        ]);
+
+        $comite->givePermissionTo([
+            $account_details,
+            $manageUsers,
         ]);
 
         $inactivo->givePermissionTo([
