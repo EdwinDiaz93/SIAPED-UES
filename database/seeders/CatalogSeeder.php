@@ -92,11 +92,6 @@ class CatalogSeeder extends Seeder
             "catalog_type_id" => $documento->id,
         ]);
         CatalogValue::create([
-            'name' => 'Nit',
-            "value" => 'nit',
-            "catalog_type_id" => $documento->id,
-        ]);
-        CatalogValue::create([
             'name' => 'Isss',
             "value" => 'isss',
             "catalog_type_id" => $documento->id,

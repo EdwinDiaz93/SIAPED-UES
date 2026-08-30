@@ -214,7 +214,7 @@ new class extends Component {
     <div x-data="{ selectedTab: 'personales' }" class="w-full">
         <div x-on:keydown.right.prevent="$focus.wrap().next()" x-on:keydown.left.prevent="$focus.wrap().previous()"
             class="flex gap-2 overflow-x-auto border-b border-outline dark:border-outline-dark" role="tablist"
-            aria-label="tab options">
+            aria-label="opciones de pestañas">
             <button x-on:click="selectedTab = 'personales'" x-bind:aria-selected="selectedTab === 'personales'"
                 x-bind:tabindex="selectedTab === 'personales' ? '0' : '-1'"
                 x-bind:class="selectedTab === 'personales' ?
@@ -388,8 +388,7 @@ new class extends Component {
                             <label class="font-bold">Numero Documento :</label>
                             <input
                                 x-mask:dynamic="
-                document_type === 'dui' ? '99999999-9' :
-                (document_type === 'nit' ? '9999-999999-999-9' : '')
+                document_type === 'dui' ? '99999999-9' : ''
             "
                                 type="text" wire:model="documentForm.value"
                                 class=" p-2 border rounded-lg border-ues w-full">
@@ -524,7 +523,7 @@ new class extends Component {
 
 
                         <div class="flex flex-col w-120 mx-1">
-                            <label class="font-bold">Fecha Graduacion:</label>
+                            <label class="font-bold">Fecha Graduacion: <span class="text-red-500">*</span></label>
 
                             <input type="date" wire:model='institutionForm.fecha_graduacion'
                                 class=" p-2 border rounded-lg border-ues w-full">
@@ -540,7 +539,7 @@ new class extends Component {
                     <div class="flex flex-row w-full mt-5">
 
                         <div class="flex flex-col w-120 mx-1 ">
-                            <label class="font-bold">Fecha de ingreso a la UES:</label>
+                            <label class="font-bold">Fecha de ingreso a la UES: <span class="text-red-500">*</span></label>
                             <input type="date" wire:model='institutionForm.fecha_ingreso'
                                 class=" p-2 border rounded-lg border-ues w-full">
                             @error('institutionForm.fecha_ingreso')

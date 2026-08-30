@@ -98,9 +98,9 @@ new class extends Component {
             <select wire:model.live="filtroAccion"
                 class="w-full mt-1 border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark">
                 <option value="">Todas</option>
-                <option value="CREATE">CREATE</option>
-                <option value="EDIT">EDIT</option>
-                <option value="DELETE">DELETE</option>
+                <option value="CREATE">Creación</option>
+                <option value="EDIT">Edición</option>
+                <option value="DELETE">Eliminación</option>
             </select>
         </div>
         <div>
@@ -150,9 +150,14 @@ new class extends Component {
                                     'EDIT'   => 'bg-yellow-100 text-yellow-800',
                                     'DELETE' => 'bg-red-100 text-red-800',
                                 ];
+                                $etiquetas = [
+                                    'CREATE' => 'Creación',
+                                    'EDIT'   => 'Edición',
+                                    'DELETE' => 'Eliminación',
+                                ];
                             @endphp
                             <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $colors[$log->action] ?? 'bg-gray-100 text-gray-800' }}">
-                                {{ $log->action }}
+                                {{ $etiquetas[$log->action] ?? $log->action }}
                             </span>
                         </td>
                         <td class="p-4 text-xs font-mono">{{ $log->table_name }}</td>
@@ -187,7 +192,7 @@ new class extends Component {
 
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold">
-                        {{ $this->detalle->action }} — {{ $this->detalle->table_name }} #{{ $this->detalle->record_id }}
+                        {{ ['CREATE' => 'Creación', 'EDIT' => 'Edición', 'DELETE' => 'Eliminación'][$this->detalle->action] ?? $this->detalle->action }} — {{ $this->detalle->table_name }} #{{ $this->detalle->record_id }}
                     </h2>
                     <button wire:click="cerrarDetalle" class="text-gray-400 hover:text-gray-600 cursor-pointer">✕</button>
                 </div>

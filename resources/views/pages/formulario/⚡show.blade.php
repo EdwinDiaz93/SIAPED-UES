@@ -129,7 +129,7 @@ new class extends Component {
 
     {{-- Header --}}
     <div class="flex items-center gap-4 mb-6 print:hidden">
-        @cannotRole('docente')
+        @unless (auth()->user()->hasRole('docente'))
             <button wire:click="volver"
                 class="flex items-center gap-2 px-3 py-2 bg-ues text-white rounded-lg cursor-pointer hover:opacity-90 text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -138,7 +138,7 @@ new class extends Component {
                 </svg>
                 Volver
             </button>
-        @endcannotRole
+        @endunless
         <h1 class="text-2xl font-bold">Formulario Consolidado de Evaluación Escalafonaria</h1>
     </div>
 
