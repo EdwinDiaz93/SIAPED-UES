@@ -22,6 +22,7 @@ class PermisosSeeder extends Seeder
             'manage.reportes',
             'manage.promociones',
             'manage.catalogos',
+            'manage.auditoria',
             'fill.cuestionario.jefe',
             'fill.cuestionario.auto',
             'fill.credenciales',
@@ -46,6 +47,7 @@ class PermisosSeeder extends Seeder
                 'manage.reportes',
                 'manage.promociones',
                 'manage.catalogos',
+                'manage.auditoria',
                 'fill.credenciales',
             ]);
         }

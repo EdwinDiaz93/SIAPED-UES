@@ -426,8 +426,11 @@ new class extends Component {
                         Solicitud de promoción pendiente de revisión
                     </div>
                 @else
-                    <button wire:click="solicitarPromocion"
-                        wire:confirm="¿Confirma que desea solicitar la promoción a {{ $resultado['siguiente_categoria'] }}? Se notificará al administrador."
+                    @php
+                        $mensajeConfirmacionPromocion = "¿Confirma que desea solicitar la promoción a {$resultado['siguiente_categoria']}? Se notificará al administrador.";
+                    @endphp
+                    <button type="button"
+                        x-on:click="confirmAction(@js($mensajeConfirmacionPromocion), () => $wire.solicitarPromocion())"
                         class="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl cursor-pointer font-semibold hover:bg-green-700 shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />

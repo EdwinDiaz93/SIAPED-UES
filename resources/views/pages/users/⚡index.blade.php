@@ -129,8 +129,8 @@ new class extends Component {
                                 </div>
 
                                 @unless ($user->hasRole('inactivo'))
-                                    <button type="button" wire:click="toggleActive('{{ $user->id }}')"
-                                        wire:confirm="{{ $user->is_active ? '¿Deshabilitar a este usuario? No podrá iniciar sesión.' : '¿Habilitar a este usuario?' }}"
+                                    <button type="button"
+                                        x-on:click="confirmAction('{{ $user->is_active ? '¿Deshabilitar a este usuario? No podrá iniciar sesión.' : '¿Habilitar a este usuario?' }}', () => $wire.toggleActive('{{ $user->id }}'))"
                                         class="rounded-radius cursor-pointer p-2 font-medium tracking-wide text-white {{ $user->is_active ? 'bg-red-600' : 'bg-emerald-600' }}">
                                         {{ $user->is_active ? 'Deshabilitar' : 'Habilitar' }}
                                     </button>

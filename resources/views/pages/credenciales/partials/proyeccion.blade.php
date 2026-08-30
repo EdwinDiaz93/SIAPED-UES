@@ -118,7 +118,7 @@
                                 @else
                                     @if ($r->estado !== 'aprobado')
                                         <button wire:click="editarProyeccion({{ $r->id }})" class="text-blue-500 hover:text-blue-700 mr-2 cursor-pointer">✏</button>
-                                        <button wire:click="eliminarProyeccion({{ $r->id }})" wire:confirm="¿Eliminar?" class="text-red-500 hover:text-red-700 cursor-pointer">✕</button>
+                                        <button type="button" x-on:click="confirmAction('¿Eliminar?', () => $wire.eliminarProyeccion({{ $r->id }}))" class="text-red-500 hover:text-red-700 cursor-pointer">✕</button>
                                     @else
                                         <span class="text-xs text-gray-400">Bloqueado</span>
                                     @endif

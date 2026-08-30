@@ -30,6 +30,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/promociones', "pages::promociones.index")->middleware('permission:manage.promociones')->name('promociones');
 
     Route::livewire('/catalogos', "pages::catalogos.index")->middleware('permission:manage.catalogos')->name('manage.catalogos');
+
+    Route::livewire('/auditoria', "pages::auditoria.index")->middleware('permission:manage.auditoria')->name('manage.auditoria');
 });
 
 require __DIR__ . '/settings.php';

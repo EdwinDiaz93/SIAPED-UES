@@ -6,6 +6,9 @@ use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use App\Models\CatalogType;
 use App\Models\CatalogValue;
+use App\Models\Document;
+use App\Models\Institution;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Validation\Rule;
 
@@ -130,10 +133,42 @@ new class extends Component {
     public function delete(int $id)
     {
         $catalogValue = CatalogValue::where('catalog_type_id', $this->catalogTypeId)->findOrFail($id);
+
+        if ($this->estaReferenciado($id)) {
+            $this->dispatch('notify', type: 'error',
+                message: 'No se puede eliminar: este elemento ya está siendo usado por registros existentes (docentes, documentos u otros).');
+            return;
+        }
+
         $oldValue = $catalogValue->toArray();
         $catalogValue->delete();
         AuditLogger::deleted('catalog_values', $id, $oldValue);
         $this->dispatch('notify', type: 'success', message: 'Elemento eliminado.');
+    }
+
+    /**
+     * Verifica si el catalog value está referenciado por alguna tabla del negocio,
+     * ya que varias de esas relaciones usan ON DELETE CASCADE (institutions) y
+     * eliminar el catálogo borraría en cascada los registros de docentes.
+     */
+    private function estaReferenciado(int $catalogValueId): bool
+    {
+        $enInstituciones = Institution::where('grado_id', $catalogValueId)
+            ->orWhere('institucion_id', $catalogValueId)
+            ->orWhere('escuela_id', $catalogValueId)
+            ->orWhere('categoria_id', $catalogValueId)
+            ->orWhere('area_id', $catalogValueId)
+            ->orWhere('tipo_nombramiento_id', $catalogValueId)
+            ->exists();
+
+        $enDocumentos = Document::where('document_type_id', $catalogValueId)->exists();
+
+        $enUsuarios = User::where('estado_civil', $catalogValueId)
+            ->orWhere('sexo', $catalogValueId)
+            ->orWhere('nacionalidad', $catalogValueId)
+            ->exists();
+
+        return $enInstituciones || $enDocumentos || $enUsuarios;
     }
 
     private function resetForm()
@@ -202,8 +237,8 @@ new class extends Component {
                                 </button>
 
                                 {{-- Eliminar --}}
-                                <button wire:click="delete({{ $catalogValue->id }})"
-                                    wire:confirm="¿Confirma que desea eliminar este elemento?"
+                                <button type="button"
+                                    x-on:click="confirmAction('¿Confirma que desea eliminar este elemento?', () => $wire.delete({{ $catalogValue->id }}))"
                                     title="Eliminar"
                                     class="p-1 rounded text-gray-500 hover:bg-gray-100 cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

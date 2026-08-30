@@ -270,8 +270,12 @@ new class extends Component {
                         class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm">
                         Cancelar
                     </button>
-                    <button wire:click="confirmarRevision"
-                        @if ($accion === 'rechazar') wire:confirm="¿Confirma el rechazo de esta solicitud?" @endif
+                    <button type="button"
+                        @if ($accion === 'rechazar')
+                            x-on:click="confirmAction('¿Confirma el rechazo de esta solicitud?', () => $wire.confirmarRevision())"
+                        @else
+                            wire:click="confirmarRevision"
+                        @endif
                         class="px-4 py-2 rounded-lg cursor-pointer text-sm font-medium text-white
                             {{ $accion === 'aprobar' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' }}">
                         {{ $accion === 'aprobar' ? 'Sí, Aprobar' : 'Sí, Rechazar' }}

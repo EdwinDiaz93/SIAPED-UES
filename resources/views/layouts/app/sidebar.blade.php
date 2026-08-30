@@ -84,6 +84,12 @@
                             {{ __('Catálogos') }}
                         </flux:sidebar.item>
                     @endcan
+                    @can('manage.auditoria')
+                        <flux:sidebar.item icon="clock" :href="route('manage.auditoria')"
+                            :current="request()->routeIs('manage.auditoria')" wire:navigate>
+                            {{ __('Bitácora') }}
+                        </flux:sidebar.item>
+                    @endcan
                 @endif
             </flux:sidebar.group>
         </flux:sidebar.nav>

@@ -264,8 +264,8 @@ new class extends Component {
 
                                 {{-- Eliminar (solo pendiente o cerrado) --}}
                                 @if ($periodo->estado !== 'activo')
-                                    <button wire:click="delete({{ $periodo->id }})"
-                                        wire:confirm="¿Confirma que desea eliminar este periodo?"
+                                    <button type="button"
+                                        x-on:click="confirmAction('¿Confirma que desea eliminar este periodo?', () => $wire.delete({{ $periodo->id }}))"
                                         title="Eliminar"
                                         class="p-1 rounded text-gray-500 hover:bg-gray-100 cursor-pointer">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
