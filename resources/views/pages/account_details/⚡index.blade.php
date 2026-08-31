@@ -157,39 +157,42 @@ new class extends Component {
             $this->institutionForm->tipo_nombramiento = $this->tiposNombramiento->first()->id;
         }
 
-        $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
+        // Valores por defecto: primer elemento de cada catálogo (por id, no por "value"),
+        // ya que el admin puede editar el "value" de un elemento del catálogo y eso
+        // rompía esta pantalla cuando buscábamos por un value fijo (ej. 'dui', 'SV', 'pu-i').
+        $sexOption = $this->sexOptions->first();
+        $this->userForm->sexo = $sexOption?->id;
 
-        $this->userForm->sexo = $sexOption->id;
-        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->first();
-        $this->userForm->nacionalidad = $nacionalidad->id;
+        $nacionalidad = $this->nacionalidades->first();
+        $this->userForm->nacionalidad = $nacionalidad?->id;
 
-        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->first();
-        $this->userForm->estado_civil = $estadoCivil->id;
+        $estadoCivil = $this->estadosCiviles->first();
+        $this->userForm->estado_civil = $estadoCivil?->id;
 
-        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->first();
-        $this->documentForm->document_type = $documento->id;
+        $documento = $this->documents->first();
+        $this->documentForm->document_type = $documento?->id;
 
-        $gradoAcademico = CatalogValue::where(['catalog_type_id' => 5, 'value' => 'ingeniería'])->first();
-        $institucionEducativa = CatalogValue::where(['catalog_type_id' => 6, 'value' => 'ues'])->first();
-        $escuela = CatalogValue::where(['catalog_type_id' => 7, 'value' => 'I10515'])->first();
-        $categoriaEscalafonaria = CatalogValue::where(['catalog_type_id' => 8, 'value' => 'pu-i'])->first();
-        $areaDeDesempeño = CatalogValue::where(['catalog_type_id' => 9, 'value' => 'docencia'])->first();
+        $gradoAcademico = $this->gradosAcademicos->first();
+        $institucionEducativa = $this->institucionesEducativas->first();
+        $escuela = $this->escuelas->first();
+        $categoriaEscalafonaria = $this->categoriasEscalafonarias->first();
+        $areaDeDesempeño = $this->areasDeDesempeño->first();
 
-        $this->institutionForm->grado_academico = $gradoAcademico->id;
-        $this->institutionForm->institucion_educativa = $institucionEducativa->id;
-        $this->institutionForm->escuela_unidad = $escuela->id;
-        $this->institutionForm->categoria_escalafonaria = $categoriaEscalafonaria->id;
-        $this->institutionForm->area_desempeño = $areaDeDesempeño->id;
+        $this->institutionForm->grado_academico = $gradoAcademico?->id;
+        $this->institutionForm->institucion_educativa = $institucionEducativa?->id;
+        $this->institutionForm->escuela_unidad = $escuela?->id;
+        $this->institutionForm->categoria_escalafonaria = $categoriaEscalafonaria?->id;
+        $this->institutionForm->area_desempeño = $areaDeDesempeño?->id;
 
         // cargar data si ya se habia guardado
         $user = User::find(auth()->user()->id);
         if ($user != null) {
             $this->userForm->nombres = $user->name;
             $this->userForm->apellidos = $user->apellidos;
-            $this->userForm->sexo = $user->sexo ?? $sexOption->id;
+            $this->userForm->sexo = $user->sexo ?? $sexOption?->id;
             $this->userForm->fecha_nacimiento = $user->fecha_nacimiento;
-            $this->userForm->nacionalidad = $user->nacionalidad ?? $nacionalidad->id;
-            $this->userForm->estado_civil = $user->estado_civil ?? $estadoCivil->id;
+            $this->userForm->nacionalidad = $user->nacionalidad ?? $nacionalidad?->id;
+            $this->userForm->estado_civil = $user->estado_civil ?? $estadoCivil?->id;
             $this->userForm->conyugue = $user->conyugue;
             $this->userForm->direccion = $user->direccion;
             $this->userForm->telefono = $user->telefono;
