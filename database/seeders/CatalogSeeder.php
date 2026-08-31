@@ -10,9 +10,92 @@ class CatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedCatalog('Sexo', 'Sexo', [
-            ['name' => 'Masculino', 'value' => 'M'],
-            ['name' => 'Femenino',  'value' => 'F'],
+        // Catalog para sexo de usuario 1
+        $sex_catalog = CatalogType::create((["name" => 'Sexo', "value" => 'Sexo']));
+
+        CatalogValue::create([
+            'name' => 'Masculino',
+            "value" => 'M',
+            "catalog_type_id" => $sex_catalog->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Femenino',
+            "value" => 'F',
+            "catalog_type_id" => $sex_catalog->id,
+        ]);
+        // Catalog para nacionalidad 2
+        $nacionalidad_catalog = CatalogType::create(["name" => "Nacionalidades", "value" => "Nacionalidades"]);
+
+        $data = [
+            ['name' => 'Argentino/a', 'value' => 'AR', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Boliviano/a', 'value' => 'BO', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Brasileño/a', 'value' => 'BR', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Chileno/a', 'value' => 'CL', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Colombiano/a', 'value' => 'CO', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Costarricense', 'value' => 'CR', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Cubano/a', 'value' => 'CU', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Dominicano/a', 'value' => 'DO', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Ecuatoriano/a', 'value' => 'EC', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Salvadoreño/a', 'value' => 'SV', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Guatemalteco/a', 'value' => 'GT', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Hondureño/a', 'value' => 'HN', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Mexicano/a', 'value' => 'MX', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Nicaragüense', 'value' => 'NI', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Panameño/a', 'value' => 'PA', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Paraguayo/a', 'value' => 'PY', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Peruano/a', 'value' => 'PE', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Puertorriqueño/a', 'value' => 'PR', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Uruguayo/a', 'value' => 'UY', 'catalog_type_id' => $nacionalidad_catalog->id],
+            ['name' => 'Venezolano/a', 'value' => 'VE', 'catalog_type_id' => $nacionalidad_catalog->id]
+        ];
+
+
+
+
+        foreach ($data as $item) {
+            CatalogValue::updateOrCreate(
+                ['value' => $item['value']],
+                [
+                    'name' => $item['name'],
+                    'catalog_type_id' => $nacionalidad_catalog->id
+                ]
+            );
+        }
+
+        // Catalogo de estado civil
+        $estado_civil = CatalogType::create(["name" => "Estado Civil", "value" => "Estado Civil"]);
+
+        CatalogValue::create([
+            'name' => 'Soltero/a',
+            "value" => 'S',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Casado/a',
+            "value" => 'C',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Divorciado/a',
+            "value" => 'D',
+            "catalog_type_id" => $estado_civil->id,
+        ]);
+        $documento = CatalogType::create(["name" => "Documentos", "value" => "Documents"]);
+
+        CatalogValue::create([
+            'name' => 'Dui',
+            "value" => 'dui',
+            "catalog_type_id" => $documento->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Isss',
+            "value" => 'isss',
+            "catalog_type_id" => $documento->id,
+        ]);
+        CatalogValue::create([
+            'name' => 'Afp',
+            "value" => 'afp',
+            "catalog_type_id" => $documento->id,
         ]);
 
         $this->seedCatalog('Nacionalidades', 'Nacionalidades', [

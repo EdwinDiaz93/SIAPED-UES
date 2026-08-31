@@ -6,6 +6,7 @@ use App\Models\PeriodoEvaluacion;
 use App\Models\FormularioConsolidado;
 use App\Models\SolicitudPromocion;
 use App\Services\PuntajeEscalafonarioCalculator;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 
 new class extends Component {
@@ -66,7 +67,7 @@ new class extends Component {
             $this->guardarFormulario();
         }
 
-        SolicitudPromocion::create([
+        $solicitud = SolicitudPromocion::create([
             'docente_id'          => $this->docenteId,
             'periodo_id'          => is_numeric($this->periodoId) ? (int) $this->periodoId : null,
             'formulario_id'       => $this->guardadoId,
@@ -76,6 +77,7 @@ new class extends Component {
             'puntaje_requerido'   => $this->resultado['total_maximo'],
             'estado'              => 'pendiente',
         ]);
+        AuditLogger::created($solicitud->getTable(), $solicitud->id, $solicitud->toArray());
 
         $this->yaSolicito = true;
         $this->dispatch('notify', type: 'success',
@@ -86,21 +88,31 @@ new class extends Component {
     {
         if (!$this->resultado) return;
 
-        $formulario = FormularioConsolidado::updateOrCreate(
-            [
-                'docente_id' => $this->docenteId,
-                'periodo_id' => (is_numeric($this->periodoId)) ? (int) $this->periodoId : null,
-            ],
-            [
-                'generado_por'        => auth()->id(),
-                'aspectos'            => $this->resultado['aspectos'],
-                'total_ganado'        => $this->resultado['total_ganado'],
-                'total_maximo'        => $this->resultado['total_maximo'],
-                'categoria_actual'    => $this->resultado['categoria_actual'],
-                'siguiente_categoria' => $this->resultado['siguiente_categoria'],
-                'cumple_ascenso'      => $this->resultado['cumple_ascenso'],
-            ]
-        );
+        $criterio = [
+            'docente_id' => $this->docenteId,
+            'periodo_id' => (is_numeric($this->periodoId)) ? (int) $this->periodoId : null,
+        ];
+        $data = [
+            'generado_por'        => auth()->id(),
+            'aspectos'            => $this->resultado['aspectos'],
+            'total_ganado'        => $this->resultado['total_ganado'],
+            'total_maximo'        => $this->resultado['total_maximo'],
+            'categoria_actual'    => $this->resultado['categoria_actual'],
+            'siguiente_categoria' => $this->resultado['siguiente_categoria'],
+            'cumple_ascenso'      => $this->resultado['cumple_ascenso'],
+        ];
+
+        $existente = FormularioConsolidado::where($criterio)->first();
+
+        if ($existente) {
+            $oldValue = $existente->toArray();
+            $existente->update($data);
+            AuditLogger::updated($existente->getTable(), $existente->id, $oldValue, $existente->fresh()->toArray());
+            $formulario = $existente;
+        } else {
+            $formulario = FormularioConsolidado::create(array_merge($criterio, $data));
+            AuditLogger::created($formulario->getTable(), $formulario->id, $formulario->toArray());
+        }
 
         $this->guardadoId = $formulario->id;
         $this->dispatch('notify', type: 'success', message: 'Formulario consolidado guardado.');
@@ -117,7 +129,7 @@ new class extends Component {
 
     {{-- Header --}}
     <div class="flex items-center gap-4 mb-6 print:hidden">
-        @cannotRole('docente')
+        @unless (auth()->user()->hasRole('docente'))
             <button wire:click="volver"
                 class="flex items-center gap-2 px-3 py-2 bg-ues text-white rounded-lg cursor-pointer hover:opacity-90 text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -126,7 +138,7 @@ new class extends Component {
                 </svg>
                 Volver
             </button>
-        @endcannotRole
+        @endunless
         <h1 class="text-2xl font-bold">Formulario Consolidado de Evaluación Escalafonaria</h1>
     </div>
 
@@ -414,8 +426,11 @@ new class extends Component {
                         Solicitud de promoción pendiente de revisión
                     </div>
                 @else
-                    <button wire:click="solicitarPromocion"
-                        wire:confirm="¿Confirma que desea solicitar la promoción a {{ $resultado['siguiente_categoria'] }}? Se notificará al administrador."
+                    @php
+                        $mensajeConfirmacionPromocion = "¿Confirma que desea solicitar la promoción a {$resultado['siguiente_categoria']}? Se notificará al administrador.";
+                    @endphp
+                    <button type="button"
+                        x-on:click="confirmAction(@js($mensajeConfirmacionPromocion), () => $wire.solicitarPromocion())"
                         class="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl cursor-pointer font-semibold hover:bg-green-700 shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />

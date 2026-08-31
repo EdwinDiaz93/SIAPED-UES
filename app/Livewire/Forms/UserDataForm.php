@@ -7,9 +7,15 @@ use Livewire\Form;
 
 class UserDataForm extends Form
 {
-    #[Validate('required', message: 'El campo nombres es requerido')]
+    #[Validate('required|regex:/^[\pL\s]+$/u', message: [
+        'nombres.required' => 'El campo nombres es requerido',
+        'nombres.regex' => 'El campo nombres solo debe contener letras',
+    ])]
     public $nombres = '';
-    #[Validate('required', message: 'El campo apellidos es requerido')]
+    #[Validate('required|regex:/^[\pL\s]+$/u', message: [
+        'apellidos.required' => 'El campo apellidos es requerido',
+        'apellidos.regex' => 'El campo apellidos solo debe contener letras',
+    ])]
     public $apellidos = '';
     #[Validate('required', message: 'El campo sexo es requerido')]
     public $sexo = null;

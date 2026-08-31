@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     @include('partials.head')
@@ -15,10 +15,12 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Menu')" class="grid">
-                <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
-                    wire:navigate>
-                    {{ __('Dashboard') }}
-                </flux:sidebar.item>
+                @if (auth()->user()->hasRole('admin'))
+                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
+                        wire:navigate>
+                        {{ __('Dashboard') }}
+                    </flux:sidebar.item>
+                @endif
                 @if (auth()->user()->can('account.details'))
                     @can('account.details')
                         <flux:sidebar.item icon="home" :href="route('account.details')"
@@ -63,6 +65,12 @@
                                 {{ __('Mi Formulario') }}
                             </flux:sidebar.item>
                         @endcan
+                        @can('fill.cuestionario.auto')
+                            <flux:sidebar.item icon="pencil-square" :href="route('evaluaciones.cuestionario')"
+                                :current="request()->routeIs('evaluaciones.cuestionario')" wire:navigate>
+                                {{ __('Mi Autoevaluación') }}
+                            </flux:sidebar.item>
+                        @endcan
                     @endcannot
                     @can('manage.reportes')
                         <flux:sidebar.item icon="chart-bar" :href="route('reportes')"
@@ -74,6 +82,30 @@
                         <flux:sidebar.item icon="arrow-trending-up" :href="route('promociones')"
                             :current="request()->routeIs('promociones')" wire:navigate>
                             {{ __('Promociones') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('reportes.promocion')
+                        <flux:sidebar.item icon="document-chart-bar" :href="route('reportes.promocion')"
+                            :current="request()->routeIs('reportes.promocion')" wire:navigate>
+                            {{ __('Docentes Aptos para Promoción') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('reportes.atestados')
+                        <flux:sidebar.item icon="table-cells" :href="route('reportes.atestados')"
+                            :current="request()->routeIs('reportes.atestados')" wire:navigate>
+                            {{ __('Listado de Atestados') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.catalogos')
+                        <flux:sidebar.item icon="rectangle-stack" :href="route('manage.catalogos')"
+                            :current="request()->routeIs('manage.catalogos')" wire:navigate>
+                            {{ __('Catálogos') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('manage.auditoria')
+                        <flux:sidebar.item icon="clock" :href="route('manage.auditoria')"
+                            :current="request()->routeIs('manage.auditoria')" wire:navigate>
+                            {{ __('Bitácora') }}
                         </flux:sidebar.item>
                     @endcan
                 @endif

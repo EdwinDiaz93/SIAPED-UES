@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
+use App\Services\AuditLogger;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -32,6 +33,8 @@ new #[Title('Profile settings')] class extends Component {
 
         $validated = $this->validate($this->profileRules($user->id));
 
+        $oldValue = $user->only(['name', 'email']);
+
         $user->fill($validated);
 
         if ($user->isDirty('email')) {
@@ -39,6 +42,8 @@ new #[Title('Profile settings')] class extends Component {
         }
 
         $user->save();
+
+        AuditLogger::updated($user->getTable(), $user->id, $oldValue, $user->only(['name', 'email']));
 
         $this->dispatch('profile-updated', name: $user->name);
     }

@@ -2,6 +2,7 @@
 
 use App\Concerns\PasswordValidationRules;
 use App\Livewire\Actions\Logout;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -18,6 +19,10 @@ new class extends Component {
         $this->validate([
             'password' => $this->currentPasswordRules(),
         ]);
+
+        $user = Auth::user();
+        // El modelo User ya oculta password/2FA/remember_token en toArray() vía #[Hidden(...)].
+        AuditLogger::deleted($user->getTable(), $user->id, $user->toArray());
 
         tap(Auth::user(), $logout(...))->delete();
 

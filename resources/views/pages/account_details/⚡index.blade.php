@@ -8,6 +8,7 @@ use App\Models\CatalogValue;
 use App\Models\User;
 use App\Models\Document;
 use App\Models\Institution;
+use App\Services\AuditLogger;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
@@ -42,6 +43,8 @@ new class extends Component {
 
         $this->userForm->validate();
 
+        $oldValue = $user->toArray();
+
         $user->name = $this->userForm->nombres;
         $user->apellidos = $this->userForm->apellidos;
         $user->fecha_nacimiento = $this->userForm->fecha_nacimiento;
@@ -53,6 +56,8 @@ new class extends Component {
         $user->telefono = $this->userForm->telefono;
         $user->save();
 
+        AuditLogger::updated($user->getTable(), $user->id, $oldValue, $user->fresh()->toArray());
+
         $this->dispatch('notify', type: 'success', message: 'Datos de usuario guardados correctamente');
     }
 
@@ -60,7 +65,7 @@ new class extends Component {
     {
         $this->documentForm->validate();
 
-        Document::create([
+        $document = Document::create([
             'user_id' => auth()->user()->id,
             'document_type_id' => $this->documentForm->document_type,
             'value' => $this->documentForm->value,
@@ -69,6 +74,8 @@ new class extends Component {
             'fecha_expiracion' => $this->documentForm->fecha_expiracion,
             'institucion' => $this->documentForm->institucion,
         ]);
+
+        AuditLogger::created($document->getTable(), $document->id, $document->toArray());
 
         $this->dispatch('notify', type: 'success', message: 'Documentos de usuario guardados correctamente');
         $this->documentForm->reset();
@@ -79,7 +86,7 @@ new class extends Component {
         $this->institutionForm->validate();
         $institution = Institution::where('user_id', auth()->user()->id)->first();
         if ($institution == null) {
-            Institution::create([
+            $institution = Institution::create([
                 'user_id'              => auth()->user()->id,
                 'grado_id'             => $this->institutionForm->grado_academico,
                 'institucion_id'       => $this->institutionForm->institucion_educativa,
@@ -90,7 +97,9 @@ new class extends Component {
                 'fecha_ingreso'        => $this->institutionForm->fecha_ingreso,
                 'tipo_nombramiento_id' => $this->institutionForm->tipo_nombramiento,
             ]);
+            AuditLogger::created($institution->getTable(), $institution->id, $institution->toArray());
         } else {
+            $oldValue = $institution->toArray();
             $institution->grado_id             = $this->institutionForm->grado_academico;
             $institution->institucion_id        = $this->institutionForm->institucion_educativa;
             $institution->escuela_id            = $this->institutionForm->escuela_unidad;
@@ -100,6 +109,7 @@ new class extends Component {
             $institution->fecha_ingreso         = $this->institutionForm->fecha_ingreso;
             $institution->tipo_nombramiento_id  = $this->institutionForm->tipo_nombramiento;
             $institution->save();
+            AuditLogger::updated($institution->getTable(), $institution->id, $oldValue, $institution->fresh()->toArray());
         }
         $this->dispatch('notify', type: 'success', message: 'Datos institucionales guardados correctamente');
     }
@@ -147,39 +157,42 @@ new class extends Component {
             $this->institutionForm->tipo_nombramiento = $this->tiposNombramiento->first()->id;
         }
 
-        $sexOption = CatalogValue::where(['catalog_type_id' => 1, 'value' => 'M'])->first();
+        // Valores por defecto: primer elemento de cada catálogo (por id, no por "value"),
+        // ya que el admin puede editar el "value" de un elemento del catálogo y eso
+        // rompía esta pantalla cuando buscábamos por un value fijo (ej. 'dui', 'SV', 'pu-i').
+        $sexOption = $this->sexOptions->first();
+        $this->userForm->sexo = $sexOption?->id;
 
-        $this->userForm->sexo = $sexOption->id;
-        $nacionalidad = CatalogValue::where(['catalog_type_id' => 2, 'value' => 'SV'])->first();
-        $this->userForm->nacionalidad = $nacionalidad->id;
+        $nacionalidad = $this->nacionalidades->first();
+        $this->userForm->nacionalidad = $nacionalidad?->id;
 
-        $estadoCivil = CatalogValue::where(['catalog_type_id' => 3, 'value' => 'S'])->first();
-        $this->userForm->estado_civil = $estadoCivil->id;
+        $estadoCivil = $this->estadosCiviles->first();
+        $this->userForm->estado_civil = $estadoCivil?->id;
 
-        $documento = CatalogValue::where(['catalog_type_id' => 4, 'value' => 'dui'])->first();
-        $this->documentForm->document_type = $documento->id;
+        $documento = $this->documents->first();
+        $this->documentForm->document_type = $documento?->id;
 
-        $gradoAcademico = CatalogValue::where(['catalog_type_id' => 5, 'value' => 'ingeniería'])->first();
-        $institucionEducativa = CatalogValue::where(['catalog_type_id' => 6, 'value' => 'ues'])->first();
-        $escuela = CatalogValue::where(['catalog_type_id' => 7, 'value' => 'I10515'])->first();
-        $categoriaEscalafonaria = CatalogValue::where(['catalog_type_id' => 8, 'value' => 'pu-i'])->first();
-        $areaDeDesempeño = CatalogValue::where(['catalog_type_id' => 9, 'value' => 'docencia'])->first();
+        $gradoAcademico = $this->gradosAcademicos->first();
+        $institucionEducativa = $this->institucionesEducativas->first();
+        $escuela = $this->escuelas->first();
+        $categoriaEscalafonaria = $this->categoriasEscalafonarias->first();
+        $areaDeDesempeño = $this->areasDeDesempeño->first();
 
-        $this->institutionForm->grado_academico = $gradoAcademico->id;
-        $this->institutionForm->institucion_educativa = $institucionEducativa->id;
-        $this->institutionForm->escuela_unidad = $escuela->id;
-        $this->institutionForm->categoria_escalafonaria = $categoriaEscalafonaria->id;
-        $this->institutionForm->area_desempeño = $areaDeDesempeño->id;
+        $this->institutionForm->grado_academico = $gradoAcademico?->id;
+        $this->institutionForm->institucion_educativa = $institucionEducativa?->id;
+        $this->institutionForm->escuela_unidad = $escuela?->id;
+        $this->institutionForm->categoria_escalafonaria = $categoriaEscalafonaria?->id;
+        $this->institutionForm->area_desempeño = $areaDeDesempeño?->id;
 
         // cargar data si ya se habia guardado
         $user = User::find(auth()->user()->id);
         if ($user != null) {
             $this->userForm->nombres = $user->name;
             $this->userForm->apellidos = $user->apellidos;
-            $this->userForm->sexo = $user->sexo ?? $sexOption->id;
+            $this->userForm->sexo = $user->sexo ?? $sexOption?->id;
             $this->userForm->fecha_nacimiento = $user->fecha_nacimiento;
-            $this->userForm->nacionalidad = $user->nacionalidad ?? $nacionalidad->id;
-            $this->userForm->estado_civil = $user->estado_civil ?? $estadoCivil->id;
+            $this->userForm->nacionalidad = $user->nacionalidad ?? $nacionalidad?->id;
+            $this->userForm->estado_civil = $user->estado_civil ?? $estadoCivil?->id;
             $this->userForm->conyugue = $user->conyugue;
             $this->userForm->direccion = $user->direccion;
             $this->userForm->telefono = $user->telefono;
@@ -204,7 +217,7 @@ new class extends Component {
     <div x-data="{ selectedTab: 'personales' }" class="w-full">
         <div x-on:keydown.right.prevent="$focus.wrap().next()" x-on:keydown.left.prevent="$focus.wrap().previous()"
             class="flex gap-2 overflow-x-auto border-b border-outline dark:border-outline-dark" role="tablist"
-            aria-label="tab options">
+            aria-label="opciones de pestañas">
             <button x-on:click="selectedTab = 'personales'" x-bind:aria-selected="selectedTab === 'personales'"
                 x-bind:tabindex="selectedTab === 'personales' ? '0' : '-1'"
                 x-bind:class="selectedTab === 'personales' ?
@@ -378,8 +391,7 @@ new class extends Component {
                             <label class="font-bold">Numero Documento :</label>
                             <input
                                 x-mask:dynamic="
-                document_type === 'dui' ? '99999999-9' :
-                (document_type === 'nit' ? '9999-999999-999-9' : '')
+                document_type === 'dui' ? '99999999-9' : ''
             "
                                 type="text" wire:model="documentForm.value"
                                 class=" p-2 border rounded-lg border-ues w-full">
@@ -514,7 +526,7 @@ new class extends Component {
 
 
                         <div class="flex flex-col w-120 mx-1">
-                            <label class="font-bold">Fecha Graduacion:</label>
+                            <label class="font-bold">Fecha Graduacion: <span class="text-red-500">*</span></label>
 
                             <input type="date" wire:model='institutionForm.fecha_graduacion'
                                 class=" p-2 border rounded-lg border-ues w-full">
@@ -530,7 +542,7 @@ new class extends Component {
                     <div class="flex flex-row w-full mt-5">
 
                         <div class="flex flex-col w-120 mx-1 ">
-                            <label class="font-bold">Fecha de ingreso a la UES:</label>
+                            <label class="font-bold">Fecha de ingreso a la UES: <span class="text-red-500">*</span></label>
                             <input type="date" wire:model='institutionForm.fecha_ingreso'
                                 class=" p-2 border rounded-lg border-ues w-full">
                             @error('institutionForm.fecha_ingreso')

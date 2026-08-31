@@ -42,15 +42,62 @@ class DatabaseSeeder extends Seeder
             $manageEval, $manageReportes, $manageProm, $fillCred,
         ]);
 
-        $docente->syncPermissions([
-            $account_details, $fillAuto, $fillCred, $solicitarProm,
+        $admin = Role::create(([
+            "name" => "admin"
+        ]));
+        $docente = Role::create(([
+            "name" => "docente"
+        ]));
+
+        $inactivo = Role::create(([
+            "name" => "inactivo"
+        ]));
+        $comite = Role::create(([
+            "name" => "comite"
+        ]));
+
+        // ── Permisos base ─────────────────────────────────────────────────────
+        $account_details  = Permission::create(['name' => 'account.details']);
+        $manageUsers      = Permission::create(['name' => 'manage.users']);
+        $managePeriodos   = Permission::create(['name' => 'manage.periodos']);
+        $manageEval       = Permission::create(['name' => 'manage.evaluaciones']);
+        $manageReportes   = Permission::create(['name' => 'manage.reportes']);
+        $manageProm       = Permission::create(['name' => 'manage.promociones']);
+        $manageCatalogos  = Permission::create(['name' => 'manage.catalogos']);
+        $manageAuditoria  = Permission::create(['name' => 'manage.auditoria']);
+        $fillAuto         = Permission::create(['name' => 'fill.cuestionario.auto']);
+        $fillCred         = Permission::create(['name' => 'fill.credenciales']);
+        $solicitarProm    = Permission::create(['name' => 'solicitar.promocion']);
+        $reportesProm     = Permission::create(['name' => 'reportes.promocion']);
+        $reportesAtestados= Permission::create(['name' => 'reportes.atestados']);
+
+        // ── Asignación de permisos por rol ────────────────────────────────────
+        $admin->givePermissionTo([
+            $account_details,
+            $manageUsers,
+            $managePeriodos,
+            $manageEval,
+            $manageReportes,
+            $manageProm,
+            $manageCatalogos,
+            $manageAuditoria,
+            $fillCred,
         ]);
 
         $jefeInmediato->syncPermissions([
             $account_details, $fillJefe,
         ]);
 
-        $inactivo->syncPermissions([
+        $comite->givePermissionTo([
+            $account_details,
+            $manageUsers,
+            $manageProm,
+            $managePeriodos,
+            $reportesProm,
+            $reportesAtestados,
+        ]);
+
+        $inactivo->givePermissionTo([
             $account_details,
         ]);
 

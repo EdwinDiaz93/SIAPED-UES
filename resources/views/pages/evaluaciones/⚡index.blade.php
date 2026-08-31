@@ -6,6 +6,7 @@ use Livewire\WithPagination;
 use App\Models\Evaluacion;
 use App\Models\PeriodoEvaluacion;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Spatie\Permission\Models\Role;
 
 new class extends Component {
@@ -66,11 +67,12 @@ new class extends Component {
                 ->exists();
 
             if (!$existe) {
-                Evaluacion::create([
+                $evaluacion = Evaluacion::create([
                     'docente_id' => $docente->id,
                     'periodo_id' => $this->periodoSeleccionado,
                     'estado'     => 'pendiente',
                 ]);
+                AuditLogger::created($evaluacion->getTable(), $evaluacion->id, $evaluacion->toArray());
                 $creadas++;
             }
         }
@@ -118,8 +120,8 @@ new class extends Component {
         </div>
 
         @if ($periodoSeleccionado)
-            <button wire:click="generarEvaluaciones"
-                wire:confirm="¿Generar evaluaciones para todos los docentes activos en este periodo?"
+            <button type="button"
+                x-on:click="confirmAction('¿Generar evaluaciones para todos los docentes activos en este periodo?', () => $wire.generarEvaluaciones())"
                 class="flex items-center gap-2 px-4 py-2 bg-ues text-white rounded-lg cursor-pointer font-medium hover:opacity-90">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-5">

@@ -118,6 +118,64 @@ function toastSystem() {
     }
 }
 </script>
+
+<div
+    x-data="confirmDialog()"
+    x-on:confirm-action.window="open($event.detail)"
+    x-show="show"
+    x-cloak
+    class="fixed inset-0 z-100 flex items-center justify-center bg-black/50"
+    style="display: none"
+>
+    <div
+        x-show="show"
+        x-transition:enter="transform ease-out duration-150"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        @click.outside="cancel()"
+        class="bg-white dark:bg-zinc-800 rounded-xl shadow-xl w-full max-w-sm p-6"
+    >
+        <h3 class="text-lg font-bold mb-2 text-[#960000]">Confirmar acción</h3>
+        <p class="text-sm text-zinc-600 dark:text-zinc-300 mb-6" x-text="message"></p>
+        <div class="flex justify-end gap-3">
+            <button type="button" @click="cancel()"
+                class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm">
+                Cancelar
+            </button>
+            <button type="button" @click="confirm()"
+                class="px-4 py-2 bg-[#960000] text-white rounded-lg cursor-pointer hover:opacity-90 text-sm font-medium">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDialog() {
+    return {
+        show: false,
+        message: '',
+        action: null,
+
+        open(detail) {
+            this.message = detail.message;
+            this.action = detail.action;
+            this.show = true;
+        },
+
+        confirm() {
+            if (typeof this.action === 'function') this.action();
+            this.show = false;
+            this.action = null;
+        },
+
+        cancel() {
+            this.action = null;
+            this.show = false;
+        }
+    }
+}
+</script>
 </x-layouts::app.sidebar>
 
 

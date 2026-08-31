@@ -24,6 +24,10 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+        ], [
+            'email.required' => 'El correo electrónico es requerido.',
+            'email.email'    => 'Ingresa un correo electrónico válido.',
+            'email.unique'   => 'Este correo electrónico ya está registrado.',
         ])->validate();
         $user = User::create([
             // 'name' => $input['name'],

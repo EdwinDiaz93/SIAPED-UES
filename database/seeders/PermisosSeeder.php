@@ -21,10 +21,13 @@ class PermisosSeeder extends Seeder
             'manage.evaluaciones',
             'manage.reportes',
             'manage.promociones',
-            'fill.cuestionario.jefe',
+            'manage.catalogos',
+            'manage.auditoria',
             'fill.cuestionario.auto',
             'fill.credenciales',
             'solicitar.promocion',
+            'reportes.promocion',
+            'reportes.atestados',
         ];
 
         foreach ($permisos as $nombre) {
@@ -32,8 +35,8 @@ class PermisosSeeder extends Seeder
         }
 
         $admin   = Role::where('name', 'admin')->first();
-        $jefe    = Role::where('name', 'Jefe')->first();
         $docente = Role::where('name', 'docente')->first();
+        $comite  = Role::firstOrCreate(['name' => 'comite']);
         $inactivo= Role::where('name', 'inactivo')->first();
 
         if ($admin) {
@@ -44,6 +47,8 @@ class PermisosSeeder extends Seeder
                 'manage.evaluaciones',
                 'manage.reportes',
                 'manage.promociones',
+                'manage.catalogos',
+                'manage.auditoria',
                 'fill.credenciales',
             ]);
         }
@@ -57,15 +62,21 @@ class PermisosSeeder extends Seeder
             ]);
         }
 
-        if ($jefe) {
-            $jefe->syncPermissions([
-                'account.details',
-                'fill.cuestionario.jefe',
-            ]);
-        }
+        $comite->syncPermissions([
+            'account.details',
+            'manage.users',
+            'manage.promociones',
+            'manage.periodos',
+            'reportes.promocion',
+            'reportes.atestados',
+        ]);
 
         if ($inactivo) {
             $inactivo->syncPermissions(['account.details']);
         }
+
+        // El rol "Jefe" quedó obsoleto: se elimina si existe en instancias previas.
+        Role::where('name', 'Jefe')->delete();
+        Permission::where('name', 'fill.cuestionario.jefe')->delete();
     }
 }
