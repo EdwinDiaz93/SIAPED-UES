@@ -26,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('/formulario', "pages::formulario.show")->middleware('permission:manage.evaluaciones|fill.credenciales')->name('formulario.show');
 
     Route::livewire('/reportes', "pages::reportes.index")->middleware('permission:manage.reportes')->name('reportes');
+    Route::livewire('/reportes/promocion', "pages::reportes.promocion")->middleware('permission:reportes.promocion')->name('reportes.promocion');
+    Route::livewire('/reportes/atestados', "pages::reportes.atestados")->middleware('permission:reportes.atestados')->name('reportes.atestados');
 
     Route::livewire('/promociones', "pages::promociones.index")->middleware('permission:manage.promociones')->name('promociones');
 

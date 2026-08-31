@@ -87,10 +87,10 @@ new class extends Component {
             return;
         }
 
-        // Solo admin puede elegir el rol de aprobación; cualquier otro rol
-        // (ej. comité) únicamente puede aprobar con el rol por defecto,
+        // Solo admin y comité pueden elegir el rol de aprobación (docente o comité);
+        // cualquier otro rol únicamente puede aprobar con el rol por defecto,
         // sin importar qué valor llegue manipulado desde el cliente.
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasAnyRole(['admin', 'comite'])) {
             $this->rolAprobacion = 'docente';
         }
 
@@ -141,7 +141,7 @@ new class extends Component {
 
             @if ($this->usuario->hasRole('inactivo'))
                 <div x-data="{ rol: @entangle('rolAprobacion') }" class="flex items-center gap-2">
-                    @if (auth()->user()->hasRole('admin'))
+                    @if (auth()->user()->hasAnyRole(['admin', 'comite']))
                         <select x-model="rol"
                             class="rounded-lg border border-outline px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark">
                             @foreach ($this->rolesAprobables() as $rolOpcion)

@@ -5,13 +5,19 @@ use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
 use App\Models\SolicitudPromocion;
 use App\Models\CatalogValue;
+use App\Models\CatalogType;
 use App\Models\Institution;
+use App\Models\PeriodoEvaluacion;
 use App\Services\AuditLogger;
 
 new class extends Component {
     use WithPagination;
 
     public string $filtroEstado     = 'pendiente';
+    public string $filtroDocente    = '';
+    public string $filtroEscuela    = '';
+    public string $filtroCategoria  = '';
+    public ?int   $filtroPeriodo    = null;
     public bool   $showModal        = false;
     public ?int   $solicitudActiva  = null;
     public string $observaciones    = '';
@@ -27,8 +33,40 @@ new class extends Component {
             'revisadoPor',
         ])
         ->when($this->filtroEstado, fn($q) => $q->where('estado', $this->filtroEstado))
+        ->when($this->filtroDocente, fn($q) => $q->whereHas('docente', fn($qd) =>
+            $qd->where('name', 'like', "%{$this->filtroDocente}%")
+               ->orWhere('apellidos', 'like', "%{$this->filtroDocente}%")
+        ))
+        ->when($this->filtroEscuela, fn($q) => $q->whereHas('docente.institution.escuela', fn($qe) =>
+            $qe->where('value', $this->filtroEscuela)
+        ))
+        ->when($this->filtroCategoria, fn($q) => $q->where('categoria_solicitada', $this->filtroCategoria))
+        ->when($this->filtroPeriodo, fn($q) => $q->where('periodo_id', $this->filtroPeriodo))
         ->orderByDesc('created_at')
         ->paginate(15);
+    }
+
+    #[Computed]
+    public function escuelas()
+    {
+        return CatalogType::where('value', 'Escuelas')->first()
+            ?->catalogValues ?? collect();
+    }
+
+    #[Computed]
+    public function periodos()
+    {
+        return PeriodoEvaluacion::orderBy('anio', 'desc')->orderBy('ciclo')->get();
+    }
+
+    #[Computed]
+    public function categorias()
+    {
+        return SolicitudPromocion::query()
+            ->select('categoria_solicitada')
+            ->distinct()
+            ->orderBy('categoria_solicitada')
+            ->pluck('categoria_solicitada');
     }
 
     #[Computed]
@@ -41,7 +79,17 @@ new class extends Component {
         ];
     }
 
-    public function updatedFiltroEstado() { $this->resetPage(); }
+    public function updatedFiltroEstado()    { $this->resetPage(); }
+    public function updatedFiltroDocente()   { $this->resetPage(); }
+    public function updatedFiltroEscuela()   { $this->resetPage(); }
+    public function updatedFiltroCategoria() { $this->resetPage(); }
+    public function updatedFiltroPeriodo()   { $this->resetPage(); }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['filtroDocente', 'filtroEscuela', 'filtroCategoria', 'filtroPeriodo']);
+        $this->resetPage();
+    }
 
     public function abrirRevision(int $id, string $accion)
     {
@@ -53,6 +101,11 @@ new class extends Component {
 
     public function confirmarRevision()
     {
+        if ($this->accion === 'rechazar' && trim($this->observaciones) === '') {
+            $this->dispatch('notify', type: 'error', message: 'Debes indicar el motivo del rechazo en observaciones.');
+            return;
+        }
+
         $solicitud = SolicitudPromocion::findOrFail($this->solicitudActiva);
 
         if ($solicitud->estado !== 'pendiente') {
@@ -81,6 +134,14 @@ new class extends Component {
             try {
                 \Illuminate\Support\Facades\Mail::to($solicitud->docente->email)
                     ->send(new \App\Mail\PromocionAprobadaMail($solicitud));
+            } catch (\Throwable) {
+                // Mail falla silenciosamente para no bloquear el flujo
+            }
+        } else {
+            // Notificar al docente por email el rechazo y su motivo
+            try {
+                \Illuminate\Support\Facades\Mail::to($solicitud->docente->email)
+                    ->send(new \App\Mail\PromocionRechazadaMail($solicitud));
             } catch (\Throwable) {
                 // Mail falla silenciosamente para no bloquear el flujo
             }
@@ -119,6 +180,51 @@ new class extends Component {
                 <p class="text-sm font-medium">{{ $label }}</p>
             </button>
         @endforeach
+    </div>
+
+    {{-- Filtros --}}
+    <div class="flex flex-wrap gap-4 items-end mb-6">
+        <div>
+            <label class="text-sm font-semibold block mb-1">Docente</label>
+            <input type="text" wire:model.live.debounce.400ms="filtroDocente" placeholder="Nombre o apellidos..."
+                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-56">
+        </div>
+        <div>
+            <label class="text-sm font-semibold block mb-1">Escuela / Unidad</label>
+            <select wire:model.live="filtroEscuela"
+                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-48">
+                <option value="">Todas</option>
+                @foreach ($this->escuelas as $e)
+                    <option value="{{ $e->value }}">{{ $e->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="text-sm font-semibold block mb-1">Categoría Solicitada</label>
+            <select wire:model.live="filtroCategoria"
+                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-40">
+                <option value="">Todas</option>
+                @foreach ($this->categorias as $c)
+                    <option value="{{ $c }}">{{ $c }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="text-sm font-semibold block mb-1">Periodo</label>
+            <select wire:model.live="filtroPeriodo"
+                class="border border-outline rounded-lg px-3 py-2 text-sm dark:bg-surface-dark-alt dark:border-outline-dark min-w-48">
+                <option value="">Todos</option>
+                @foreach ($this->periodos as $p)
+                    <option value="{{ $p->id }}">{{ $p->label }}</option>
+                @endforeach
+            </select>
+        </div>
+        @if ($filtroDocente || $filtroEscuela || $filtroCategoria || $filtroPeriodo)
+            <button wire:click="limpiarFiltros"
+                class="px-4 py-2 border border-gray-400 text-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
+                Limpiar filtros
+            </button>
+        @endif
     </div>
 
     {{-- Tabla de solicitudes --}}

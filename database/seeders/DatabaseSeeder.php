@@ -34,9 +34,6 @@ class DatabaseSeeder extends Seeder
         $inactivo = Role::create(([
             "name" => "inactivo"
         ]));
-        $jefeInmediato = Role::create(([
-            "name" => "Jefe"
-        ]));
         $comite = Role::create(([
             "name" => "comite"
         ]));
@@ -50,10 +47,11 @@ class DatabaseSeeder extends Seeder
         $manageProm       = Permission::create(['name' => 'manage.promociones']);
         $manageCatalogos  = Permission::create(['name' => 'manage.catalogos']);
         $manageAuditoria  = Permission::create(['name' => 'manage.auditoria']);
-        $fillJefe         = Permission::create(['name' => 'fill.cuestionario.jefe']);
         $fillAuto         = Permission::create(['name' => 'fill.cuestionario.auto']);
         $fillCred         = Permission::create(['name' => 'fill.credenciales']);
         $solicitarProm    = Permission::create(['name' => 'solicitar.promocion']);
+        $reportesProm     = Permission::create(['name' => 'reportes.promocion']);
+        $reportesAtestados= Permission::create(['name' => 'reportes.atestados']);
 
         // ── Asignación de permisos por rol ────────────────────────────────────
         $admin->givePermissionTo([
@@ -75,14 +73,13 @@ class DatabaseSeeder extends Seeder
             $solicitarProm,
         ]);
 
-        $jefeInmediato->givePermissionTo([
-            $account_details,
-            $fillJefe,
-        ]);
-
         $comite->givePermissionTo([
             $account_details,
             $manageUsers,
+            $manageProm,
+            $managePeriodos,
+            $reportesProm,
+            $reportesAtestados,
         ]);
 
         $inactivo->givePermissionTo([

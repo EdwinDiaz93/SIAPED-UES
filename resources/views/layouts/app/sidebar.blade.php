@@ -84,6 +84,18 @@
                             {{ __('Promociones') }}
                         </flux:sidebar.item>
                     @endcan
+                    @can('reportes.promocion')
+                        <flux:sidebar.item icon="document-chart-bar" :href="route('reportes.promocion')"
+                            :current="request()->routeIs('reportes.promocion')" wire:navigate>
+                            {{ __('Docentes Aptos para Promoción') }}
+                        </flux:sidebar.item>
+                    @endcan
+                    @can('reportes.atestados')
+                        <flux:sidebar.item icon="table-cells" :href="route('reportes.atestados')"
+                            :current="request()->routeIs('reportes.atestados')" wire:navigate>
+                            {{ __('Listado de Atestados') }}
+                        </flux:sidebar.item>
+                    @endcan
                     @can('manage.catalogos')
                         <flux:sidebar.item icon="rectangle-stack" :href="route('manage.catalogos')"
                             :current="request()->routeIs('manage.catalogos')" wire:navigate>
