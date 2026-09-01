@@ -20,6 +20,55 @@ new class extends Component {
     private const REGEX_ALFANUMERICO = '/^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\-\/() ]+$/u';
     private const MSG_ALFANUMERICO   = 'Debe contener letras (no puede ser solo números).';
 
+    // Nombres legibles de los campos para los mensajes de validación
+    // (sin esto, Livewire muestra el nombre crudo de la propiedad, ej. "proy nombre").
+    private const ATRIBUTOS = [
+        'cap_tipo'         => 'tipo',
+        'cap_nombre'       => 'nombre',
+        'cap_institucion'  => 'institución',
+        'cap_horas'        => 'horas',
+        'cap_fecha_inicio' => 'fecha de inicio',
+        'cap_fecha_fin'    => 'fecha de fin',
+        'cap_archivo'      => 'archivo',
+        'cap_archivo_desc' => 'descripción del archivo',
+
+        'proy_nombre'          => 'nombre del proyecto',
+        'proy_responsabilidad' => 'responsabilidad',
+        'proy_cobertura'       => 'cobertura',
+        'proy_duracion'        => 'duración',
+        'proy_fecha_inicio'    => 'fecha de inicio',
+        'proy_fecha_fin'       => 'fecha de fin',
+        'proy_archivo'         => 'archivo',
+        'proy_archivo_desc'    => 'descripción del archivo',
+
+        'esp_tipo'        => 'tipo',
+        'esp_titulo'      => 'título',
+        'esp_institucion' => 'institución',
+        'esp_horas'       => 'horas',
+        'esp_fecha'       => 'fecha',
+        'esp_archivo'     => 'archivo',
+        'esp_archivo_desc'=> 'descripción del archivo',
+
+        'inv_tipo'              => 'tipo',
+        'inv_titulo'            => 'título',
+        'inv_fecha'             => 'fecha',
+        'inv_financiamiento'    => 'financiamiento',
+        'inv_participacion'     => 'participación',
+        'inv_duracion_proyecto' => 'duración del proyecto',
+        'inv_tipo_publicacion'  => 'tipo de publicación',
+        'inv_archivo'           => 'archivo',
+        'inv_archivo_desc'      => 'descripción del archivo',
+
+        'seg_tipo'        => 'tipo',
+        'seg_descripcion' => 'descripción',
+        'seg_horas'       => 'horas',
+        'seg_fecha'       => 'fecha',
+        'seg_archivo'     => 'archivo',
+        'seg_archivo_desc'=> 'descripción del archivo',
+
+        'rechazo_comentario' => 'motivo del rechazo',
+    ];
+
     // ID del docente a gestionar (admin puede ver cualquiera, docente solo el suyo)
     #[Url(as: 'docenteId')]
     public int $docenteId = 0;
@@ -190,7 +239,7 @@ new class extends Component {
             'cap_archivo.max'              => 'El archivo no debe superar 10 MB.',
             'cap_nombre.regex'             => self::MSG_ALFANUMERICO,
             'cap_institucion.regex'        => self::MSG_ALFANUMERICO,
-        ]);
+        ], self::ATRIBUTOS);
 
         $puntaje = CredencialCapacitacion::calcularPuntaje(
             $this->cap_tipo,
@@ -288,7 +337,7 @@ new class extends Component {
             'proy_archivo.mimes'            => 'Solo se permiten archivos PDF, JPG o PNG.',
             'proy_archivo.max'              => 'El archivo no debe superar 10 MB.',
             'proy_nombre.regex'             => self::MSG_ALFANUMERICO,
-        ]);
+        ], self::ATRIBUTOS);
 
         $puntaje = CredencialProyeccionSocial::calcularPuntaje(
             $this->proy_responsabilidad,
@@ -388,7 +437,7 @@ new class extends Component {
             'esp_archivo.max'       => 'El archivo no debe superar 10 MB.',
             'esp_titulo.regex'      => self::MSG_ALFANUMERICO,
             'esp_institucion.regex' => self::MSG_ALFANUMERICO,
-        ]);
+        ], self::ATRIBUTOS);
 
         $puntaje = CredencialEspecializacion::calcularPuntaje(
             $this->esp_tipo,
@@ -484,7 +533,7 @@ new class extends Component {
             'inv_archivo.mimes' => 'Solo se permiten archivos PDF, JPG o PNG.',
             'inv_archivo.max'   => 'El archivo no debe superar 10 MB.',
             'inv_titulo.regex'  => self::MSG_ALFANUMERICO,
-        ]);
+        ], self::ATRIBUTOS);
 
         $puntaje = CredencialInvestigacion::calcularPuntaje([
             'tipo'              => $this->inv_tipo,
@@ -588,7 +637,7 @@ new class extends Component {
             'seg_archivo.mimes'      => 'Solo se permiten archivos PDF, JPG o PNG.',
             'seg_archivo.max'        => 'El archivo no debe superar 10 MB.',
             'seg_descripcion.regex'  => self::MSG_ALFANUMERICO,
-        ]);
+        ], self::ATRIBUTOS);
 
         $puntaje = CredencialSeguimiento::calcularPuntaje(
             $this->seg_tipo,
@@ -697,7 +746,7 @@ new class extends Component {
         ], [
             'rechazo_comentario.required' => 'Debe indicar el motivo del rechazo.',
             'rechazo_comentario.min'      => 'El comentario debe tener al menos 5 caracteres.',
-        ]);
+        ], self::ATRIBUTOS);
 
         $this->cambiarEstadoCredencial($this->rechazo_tipo, $this->rechazo_id, 'rechazado', $this->rechazo_comentario);
         $this->showModalRechazo = false;
