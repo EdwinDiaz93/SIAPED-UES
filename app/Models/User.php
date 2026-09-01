@@ -29,6 +29,7 @@ class User extends Authenticatable
         'conyugue',
         'direccion',
         'telefono',
+        'is_active',
     ];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;

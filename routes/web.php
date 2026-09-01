@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
+Route::livewire('/solicitud-reactivacion', "pages::auth.solicitud-reactivacion")
+    ->middleware('guest')
+    ->name('reactivacion.solicitar');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', fn () => auth()->user()->hasAnyRole(['admin', 'comite'])
         ? view('dashboard')

@@ -55,5 +55,12 @@
                 <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
             </div>
         @endif
+
+        @if (Route::has('reactivacion.solicitar'))
+            <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
+                <span>{{ __('¿Tu cuenta fue deshabilitada?') }}</span>
+                <flux:link :href="route('reactivacion.solicitar')" wire:navigate>{{ __('Solicitar reactivación') }}</flux:link>
+            </div>
+        @endif
     </div>
 </x-layouts::auth>
