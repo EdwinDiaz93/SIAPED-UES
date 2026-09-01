@@ -15,7 +15,7 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Menu')" class="grid">
-                @if (auth()->user()->hasRole('admin'))
+                @if (auth()->user()->hasAnyRole(['admin', 'comite']))
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                         wire:navigate>
                         {{ __('Dashboard') }}

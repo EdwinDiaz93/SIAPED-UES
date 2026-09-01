@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', fn () => auth()->user()->hasRole('admin')
+    Route::get('dashboard', fn () => auth()->user()->hasAnyRole(['admin', 'comite'])
         ? view('dashboard')
         : redirect()->route('account.details'))->name('dashboard');
 
