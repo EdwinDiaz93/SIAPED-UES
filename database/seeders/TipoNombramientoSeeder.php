@@ -8,12 +8,15 @@ use Illuminate\Database\Seeder;
 
 class TipoNombramientoSeeder extends Seeder
 {
+    /**
+     * Idempotente: seguro de re-ejecutar en instancias que ya tienen este catálogo.
+     */
     public function run(): void
     {
-        $tipo = CatalogType::create([
-            'name'  => 'Tipo Nombramiento',
-            'value' => 'Tipo Nombramiento',
-        ]);
+        $tipo = CatalogType::firstOrCreate(
+            ['value' => 'Tipo Nombramiento'],
+            ['name' => 'Tipo Nombramiento']
+        );
 
         $nombramientos = [
             ['name' => 'Tiempo Completo', 'value' => 'tiempo_completo'],
@@ -22,11 +25,10 @@ class TipoNombramientoSeeder extends Seeder
         ];
 
         foreach ($nombramientos as $item) {
-            CatalogValue::create([
-                'name'            => $item['name'],
-                'value'           => $item['value'],
-                'catalog_type_id' => $tipo->id,
-            ]);
+            CatalogValue::firstOrCreate(
+                ['catalog_type_id' => $tipo->id, 'value' => $item['value']],
+                ['name' => $item['name']]
+            );
         }
     }
 }

@@ -34,33 +34,29 @@ class PermisosSeeder extends Seeder
             Permission::firstOrCreate(['name' => $nombre]);
         }
 
-        $admin   = Role::where('name', 'admin')->first();
-        $docente = Role::where('name', 'docente')->first();
+        $admin   = Role::firstOrCreate(['name' => 'admin']);
+        $docente = Role::firstOrCreate(['name' => 'docente']);
         $comite  = Role::firstOrCreate(['name' => 'comite']);
-        $inactivo= Role::where('name', 'inactivo')->first();
+        $inactivo= Role::firstOrCreate(['name' => 'inactivo']);
 
-        if ($admin) {
-            $admin->syncPermissions([
-                'account.details',
-                'manage.users',
-                'manage.periodos',
-                'manage.evaluaciones',
-                'manage.reportes',
-                'manage.promociones',
-                'manage.catalogos',
-                'manage.auditoria',
-                'fill.credenciales',
-            ]);
-        }
+        $admin->syncPermissions([
+            'account.details',
+            'manage.users',
+            'manage.periodos',
+            'manage.evaluaciones',
+            'manage.reportes',
+            'manage.promociones',
+            'manage.catalogos',
+            'manage.auditoria',
+            'fill.credenciales',
+        ]);
 
-        if ($docente) {
-            $docente->syncPermissions([
-                'account.details',
-                'fill.cuestionario.auto',
-                'fill.credenciales',
-                'solicitar.promocion',
-            ]);
-        }
+        $docente->syncPermissions([
+            'account.details',
+            'fill.cuestionario.auto',
+            'fill.credenciales',
+            'solicitar.promocion',
+        ]);
 
         $comite->syncPermissions([
             'account.details',
@@ -71,9 +67,7 @@ class PermisosSeeder extends Seeder
             'reportes.atestados',
         ]);
 
-        if ($inactivo) {
-            $inactivo->syncPermissions(['account.details']);
-        }
+        $inactivo->syncPermissions(['account.details']);
 
         // El rol "Jefe" quedó obsoleto: se elimina si existe en instancias previas.
         Role::where('name', 'Jefe')->delete();
