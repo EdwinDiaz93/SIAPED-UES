@@ -103,7 +103,11 @@ new class extends Component {
 
         AuditLogger::updated($this->usuario->getTable(), $this->usuario->id, ['role' => $rolInactivo->name], ['role' => $rolSeleccionado->name]);
 
-        Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
+        try {
+            Mail::to($this->usuario->email)->send(new ApproveMail($this->usuario));
+        } catch (\Throwable) {
+            // La aprobación ya quedó guardada; el correo no debe bloquear el flujo.
+        }
 
         return $this->redirectRoute('manage.users');
     }

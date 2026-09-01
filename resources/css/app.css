@@ -115,3 +115,15 @@ select:focus[data-flux-control] {
 .error{
     @apply text-red-500 font-light;
 }
+
+/* Al imprimir (ej. reportes con window.print()) ocultamos siempre el
+   chrome de la app (sidebar, header móvil, toasts, diálogos) para que
+   solo salga el contenido de la página. Usamos selectores de Flux con
+   !important porque sus propias clases (flex, etc.) pueden ganar la
+   especificidad frente a utilidades Tailwind normales como print:hidden. */
+@media print {
+    ui-sidebar[data-flux-sidebar],
+    header[data-flux-header] {
+        display: none !important;
+    }
+}
