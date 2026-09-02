@@ -38,6 +38,7 @@ class PermisosSeeder extends Seeder
         $docente = Role::firstOrCreate(['name' => 'docente']);
         $comite  = Role::firstOrCreate(['name' => 'comite']);
         $inactivo= Role::firstOrCreate(['name' => 'inactivo']);
+        $junta   = Role::firstOrCreate(['name' => 'junta']);
 
         $admin->syncPermissions([
             'account.details',
@@ -68,6 +69,13 @@ class PermisosSeeder extends Seeder
         ]);
 
         $inactivo->syncPermissions(['account.details']);
+
+        $junta->syncPermissions([
+            'account.details',
+            'manage.reportes',
+            'reportes.promocion',
+            'reportes.atestados',
+        ]);
 
         // El rol "Jefe" quedó obsoleto: se elimina si existe en instancias previas.
         Role::where('name', 'Jefe')->delete();

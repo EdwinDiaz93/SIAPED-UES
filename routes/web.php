@@ -10,9 +10,11 @@ Route::livewire('/solicitud-reactivacion', "pages::auth.solicitud-reactivacion")
     ->name('reactivacion.solicitar');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', fn () => auth()->user()->hasAnyRole(['admin', 'comite'])
-        ? view('dashboard')
-        : redirect()->route('account.details'))->name('dashboard');
+    Route::get('dashboard', fn () => match (true) {
+        auth()->user()->hasAnyRole(['admin', 'comite']) => view('dashboard'),
+        auth()->user()->hasRole('junta') => redirect()->route('reportes'),
+        default => redirect()->route('account.details'),
+    })->name('dashboard');
 
 
     Route::livewire('/cuenta', "pages::account_details")->middleware('permission:account.details')->name('account.details');
