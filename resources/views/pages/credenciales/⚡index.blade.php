@@ -11,6 +11,7 @@ use App\Models\CredencialEspecializacion;
 use App\Models\CredencialInvestigacion;
 use App\Models\CredencialSeguimiento;
 use App\Services\AuditLogger;
+use Carbon\Carbon;
 
 new class extends Component {
     use WithFileUploads;
@@ -19,6 +20,11 @@ new class extends Component {
     // (evita registros con solo números, ej. "12345" como nombre de curso).
     private const REGEX_ALFANUMERICO = '/^(?=.*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ])[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.,\-\/() ]+$/u';
     private const MSG_ALFANUMERICO   = 'Debe contener letras (no puede ser solo números).';
+
+    // Tope de horas hábiles que se pueden acreditar por cada día calendario dentro
+    // del rango de fechas de un curso (evita, ej., declarar 40 horas en un curso
+    // de domingo a lunes, que solo cubre 2 días).
+    private const MAX_HORAS_POR_DIA = 8;
 
     // Nombres legibles de los campos para los mensajes de validación
     // (sin esto, Livewire muestra el nombre crudo de la propiedad, ej. "proy nombre").
@@ -241,6 +247,15 @@ new class extends Component {
             'cap_institucion.regex'        => self::MSG_ALFANUMERICO,
         ], self::ATRIBUTOS);
 
+        if ($this->cap_tipo === 'curso') {
+            $this->validarHorasVsRango(
+                (int) $this->cap_horas,
+                $this->cap_fecha_inicio,
+                $this->cap_fecha_fin,
+                'cap_horas'
+            );
+        }
+
         $puntaje = CredencialCapacitacion::calcularPuntaje(
             $this->cap_tipo,
             $this->cap_tipo === 'curso' ? (int) $this->cap_horas : null
@@ -274,12 +289,13 @@ new class extends Component {
             $oldValue = $registro->toArray();
             $registro->update($data);
             AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
+            $this->cap_archivo = null;
         } else {
             $registro = CredencialCapacitacion::create($data);
             AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
+            $this->resetCap();
         }
 
-        $this->resetCap();
         $this->dispatch('notify', type: 'success', message: 'Credencial de capacitación guardada.');
     }
 
@@ -373,12 +389,13 @@ new class extends Component {
             $oldValue = $registro->toArray();
             $registro->update($data);
             AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
+            $this->proy_archivo = null;
         } else {
             $registro = CredencialProyeccionSocial::create($data);
             AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
+            $this->resetProy();
         }
 
-        $this->resetProy();
         $this->dispatch('notify', type: 'success', message: 'Proyecto de proyección social guardado.');
     }
 
@@ -471,12 +488,13 @@ new class extends Component {
             $oldValue = $registro->toArray();
             $registro->update($data);
             AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
+            $this->esp_archivo = null;
         } else {
             $registro = CredencialEspecializacion::create($data);
             AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
+            $this->resetEsp();
         }
 
-        $this->resetEsp();
         $this->dispatch('notify', type: 'success', message: 'Credencial de especialización guardada.');
     }
 
@@ -572,12 +590,13 @@ new class extends Component {
             $oldValue = $registro->toArray();
             $registro->update($data);
             AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
+            $this->inv_archivo = null;
         } else {
             $registro = CredencialInvestigacion::create($data);
             AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
+            $this->resetInv();
         }
 
-        $this->resetInv();
         $this->dispatch('notify', type: 'success', message: 'Credencial de investigación guardada.');
     }
 
@@ -670,12 +689,13 @@ new class extends Component {
             $oldValue = $registro->toArray();
             $registro->update($data);
             AuditLogger::updated($registro->getTable(), $registro->id, $oldValue, $registro->fresh()->toArray());
+            $this->seg_archivo = null;
         } else {
             $registro = CredencialSeguimiento::create($data);
             AuditLogger::created($registro->getTable(), $registro->id, $registro->toArray());
+            $this->resetSeg();
         }
 
-        $this->resetSeg();
         $this->dispatch('notify', type: 'success', message: 'Credencial de seguimiento guardada.');
     }
 
@@ -718,6 +738,20 @@ new class extends Component {
     private function subirArchivo($archivo, string $carpeta): string
     {
         return $archivo->store('credenciales/' . $carpeta, 'public');
+    }
+
+    // ── Validación de horas hábiles vs. rango de fechas ─────────────────────────
+
+    private function validarHorasVsRango(int $horas, string $fechaInicio, string $fechaFin, string $campo): void
+    {
+        $dias     = Carbon::parse($fechaInicio)->diffInDays(Carbon::parse($fechaFin)) + 1;
+        $maxHoras = $dias * self::MAX_HORAS_POR_DIA;
+
+        if ($horas > $maxHoras) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $campo => "Las horas declaradas ({$horas}) exceden el máximo posible para el rango de fechas seleccionado ({$dias} día(s), máximo {$maxHoras} horas hábiles).",
+            ]);
+        }
     }
 
     // ── Aprobación (solo admin) ───────────────────────────────────────────────

@@ -65,6 +65,24 @@ new class extends Component {
     {
         $this->documentForm->validate();
 
+        $tipoDocumento = CatalogValue::find($this->documentForm->document_type)?->value;
+
+        $formatosPorTipo = [
+            'dui'  => '/^\d{8}-\d$/',
+            'isss' => '/^\d{9}$/',
+            'afp'  => '/^\d{11}$/',
+        ];
+
+        if (isset($formatosPorTipo[$tipoDocumento]) && !preg_match($formatosPorTipo[$tipoDocumento], $this->documentForm->value)) {
+            $this->addError('documentForm.value', match ($tipoDocumento) {
+                'dui'  => 'El DUI debe tener el formato 00000000-0.',
+                'isss' => 'El número de ISSS debe tener 9 dígitos.',
+                'afp'  => 'El número de AFP debe tener 11 dígitos.',
+                default => 'El formato del número de documento no es válido.',
+            });
+            return;
+        }
+
         $document = Document::create([
             'user_id' => auth()->user()->id,
             'document_type_id' => $this->documentForm->document_type,
@@ -171,6 +189,7 @@ new class extends Component {
 
         $documento = $this->documents->first();
         $this->documentForm->document_type = $documento?->id;
+        $this->document_type = $documento?->value ?? 'dui';
 
         $gradoAcademico = $this->gradosAcademicos->first();
         $institucionEducativa = $this->institucionesEducativas->first();
@@ -391,7 +410,10 @@ new class extends Component {
                             <label class="font-bold">Numero Documento :</label>
                             <input
                                 x-mask:dynamic="
-                document_type === 'dui' ? '99999999-9' : ''
+                document_type === 'dui' ? '99999999-9' :
+                document_type === 'isss' ? '999999999' :
+                document_type === 'afp' ? '99999999999' :
+                '999999999999999'
             "
                                 type="text" wire:model="documentForm.value"
                                 class=" p-2 border rounded-lg border-ues w-full">
