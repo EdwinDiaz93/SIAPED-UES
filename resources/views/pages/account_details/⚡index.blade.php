@@ -270,6 +270,7 @@ new class extends Component {
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Nombres:</label>
                             <input wire:model="userForm.nombres" type="text"
+                                x-on:input="$el.value = $el.value.replace(/[^\p{L}\s]/gu, '')"
                                 class=" p-2 border rounded-lg border-ues w-full">
                             @error('userForm.nombres')
                                 <span class="error">{{ $message }}</span>
@@ -279,6 +280,7 @@ new class extends Component {
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Apellidos:</label>
                             <input type="text" wire:model="userForm.apellidos"
+                                x-on:input="$el.value = $el.value.replace(/[^\p{L}\s]/gu, '')"
                                 class=" p-2 border rounded-lg border-ues w-full">
                             @error('userForm.apellidos')
                                 <span class="error">{{ $message }}</span>
@@ -354,7 +356,11 @@ new class extends Component {
                         <div class="flex flex-col w-120 mx-1 ">
                             <label class="font-bold">Conyugue:</label>
                             <input wire:model='userForm.conyugue' type="text"
+                                x-on:input="$el.value = $el.value.replace(/[^\p{L}\s]/gu, '')"
                                 class=" p-2 border rounded-lg border-ues w-full">
+                            @error('userForm.conyugue')
+                                <span class="error">{{ $message }}</span>
+                            @enderror
 
                         </div>
                         <div class="flex flex-col w-120 mx-1 ">

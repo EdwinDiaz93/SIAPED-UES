@@ -25,6 +25,9 @@ class UserDataForm extends Form
     public $nacionalidad = null;
     #[Validate('required', message: 'El campo estado civil es requerido')]
     public $estado_civil = null;
+    #[Validate('nullable|regex:/^[\pL\s]+$/u', message: [
+        'conyugue.regex' => 'El campo cónyuge solo debe contener letras',
+    ])]
     public $conyugue = '';
     #[Validate('required', message: 'El campo direccion es requerido')]
     public $direccion = '';
