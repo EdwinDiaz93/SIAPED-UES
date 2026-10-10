@@ -5,6 +5,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use App\Models\User;
 use App\Mail\ReactivacionSolicitadaMail;
+use App\Support\AuthThrottle;
 use Illuminate\Support\Facades\Mail;
 
 new #[Layout('layouts::auth')] #[Title('Solicitar reactivación de cuenta')] class extends Component {
@@ -23,6 +24,11 @@ new #[Layout('layouts::auth')] #[Title('Solicitar reactivación de cuenta')] cla
         $usuario = User::where('email', $this->email)->first();
 
         if ($usuario && ! $usuario->is_active) {
+            // Limpia el contador de intentos de login de este email+IP: la
+            // solicitud llega desde el mismo navegador que usará para volver
+            // a iniciar sesión una vez que el administrador reactive la cuenta.
+            AuthThrottle::clear($usuario->email, request()->ip());
+
             // Se notifica al primer administrador registrado en el sistema.
             $admin = User::role('admin')->orderBy('id')->first();
 
