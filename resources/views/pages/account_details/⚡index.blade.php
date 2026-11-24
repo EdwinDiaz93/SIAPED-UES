@@ -9,8 +9,10 @@ use App\Models\User;
 use App\Models\Document;
 use App\Models\Institution;
 use App\Services\AuditLogger;
+use App\Mail\RevisionSolicitadaMail;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
 
@@ -132,6 +134,23 @@ new class extends Component {
         $this->dispatch('notify', type: 'success', message: 'Datos institucionales guardados correctamente');
     }
 
+    public function solicitarRevision()
+    {
+        abort_unless(auth()->user()->hasRole('inactivo'), 403);
+
+        $admin = User::role('admin')->orderBy('id')->first();
+
+        if ($admin) {
+            try {
+                Mail::to($admin->email)->send(new RevisionSolicitadaMail(auth()->user()));
+            } catch (\Throwable) {
+                // No bloquea el flujo si el correo falla.
+            }
+        }
+
+        $this->dispatch('notify', type: 'success', message: 'Se notificó a administración que tus datos están listos para revisión.');
+    }
+
     public function updatedDocumentFormDocumentType()
     {
         $document = CatalogValue::find($this->documentForm->document_type);
@@ -233,6 +252,20 @@ new class extends Component {
 ?>
 
 <div class="p-2">
+    @if (auth()->user()->hasRole('inactivo'))
+        <div class="flex justify-end mb-3">
+            <button type="button"
+                x-on:click="confirmAction('Se enviará un correo a administración indicando que completaste tus datos y que ya pueden revisarlos. ¿Deseas continuar?', () => $wire.solicitarRevision())"
+                class="p-2 bg-ues flex items-center text-white rounded-lg cursor-pointer font-bold border border-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m9 12.75 2.25 2.25 4.5-4.5m4.5 2.25a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span class="ml-3">Solicitar revisión</span>
+            </button>
+        </div>
+    @endif
     <div x-data="{ selectedTab: 'personales' }" class="w-full">
         <div x-on:keydown.right.prevent="$focus.wrap().next()" x-on:keydown.left.prevent="$focus.wrap().previous()"
             class="flex gap-2 overflow-x-auto border-b border-outline dark:border-outline-dark" role="tablist"
@@ -295,7 +328,7 @@ new class extends Component {
                                 @forelse ($this->sexOptions as $option)
                                     <option value={{ $option->id }}>{{ $option->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('userForm.sexo')
@@ -326,7 +359,7 @@ new class extends Component {
                                 @forelse ($this->nacionalidades as $nacionalidad)
                                     <option value={{ $nacionalidad->id }}>{{ $nacionalidad->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('userForm.nacionalidad')
@@ -341,7 +374,7 @@ new class extends Component {
                                 @forelse ($this->estadosCiviles as $estadoCivil)
                                     <option value={{ $estadoCivil->id }}>{{ $estadoCivil->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('userForm.estado_civil')
@@ -402,9 +435,9 @@ new class extends Component {
                             <select wire:model.live='documentForm.document_type'
                                 class="p-[0.55rem] border rounded-lg border-ues w-full">
                                 @forelse ($this->documents as $document)
-                                    <option value={{ $document->id }}>{{ $document->name }}</option>
+                                    <option value={{ $document->id }} class="uppercase">{{ $document->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('documentForm.document_type')
@@ -496,7 +529,7 @@ new class extends Component {
                         <tbody class="divide-y divide-outline dark:divide-outline-dark">
                             @forelse ($this->userDocuments as $document)
                                 <tr>
-                                    <td class="p-4">{{ $document->documentType->name }}</td>
+                                    <td class="p-4 uppercase">{{ $document->documentType->name }}</td>
                                     <td class="p-4">{{ $document->value }}</td>
                                     <td class="p-4">{{ $document->fecha_expedicion ?? '-' }}</td>
                                     <td class="p-4">{{ $document->lugar_expedicion ?? '-' }}</td>
@@ -529,7 +562,7 @@ new class extends Component {
                                 @forelse ($this->gradosAcademicos as $gradoAcademico)
                                     <option value={{ $gradoAcademico->id }}>{{ $gradoAcademico->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('institutionForm.grado_academico')
@@ -544,7 +577,7 @@ new class extends Component {
                                 @forelse ($this->institucionesEducativas as $institucion)
                                     <option value={{ $institucion->id }}>{{ $institucion->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('institutionForm.institucion_educativa')
@@ -604,7 +637,7 @@ new class extends Component {
                                 @forelse ($this->escuelas as $escuela)
                                     <option value={{ $escuela->id }}>{{ $escuela->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('institutionForm.escuela_unidad')
@@ -620,7 +653,7 @@ new class extends Component {
                                 @forelse ($this->categoriasEscalafonarias as $categoria)
                                     <option value={{ $categoria->id }}>{{ $categoria->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('institutionForm.categoria_escalafonaria')
@@ -635,7 +668,7 @@ new class extends Component {
                                 @forelse ($this->areasDeDesempeño as $areaDesempeño)
                                     <option value={{ $areaDesempeño->id }}>{{ $areaDesempeño->name }}</option>
                                 @empty
-                                    <option value={{ null }}>--No Option--</option>
+                                    <option value={{ null }}>-- Sin opción --</option>
                                 @endforelse
                             </select>
                             @error('institutionForm.area_desempeño')

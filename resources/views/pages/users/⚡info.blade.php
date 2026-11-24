@@ -269,7 +269,7 @@ new class extends Component {
                 <tbody class="divide-y divide-outline dark:divide-outline-dark">
                     @forelse ($this->usuario->documents as $document)
                         <tr>
-                            <td class="p-4">{{ $document->documentType?->name ?? '-' }}</td>
+                            <td class="p-4 uppercase">{{ $document->documentType?->name ?? '-' }}</td>
                             <td class="p-4">{{ $document->value }}</td>
                             <td class="p-4">{{ $document->fecha_expedicion ?? '-' }}</td>
                             <td class="p-4">{{ $document->lugar_expedicion ?? '-' }}</td>

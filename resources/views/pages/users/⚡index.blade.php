@@ -103,7 +103,9 @@ new class extends Component {
                         <td class="p-4 text-center">{{ $user->email ?? '-' }}</td>
                         <td class="p-4 text-center">{{ $user->telefono ?? '-' }}</td>
                         <td class="p-4 text-center">
-                            @if ($user->is_active)
+                            @if ($user->hasRole('inactivo'))
+                                <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">Pendiente de aprobación</span>
+                            @elseif ($user->is_active)
                                 <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Activo</span>
                             @else
                                 <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">Deshabilitado</span>

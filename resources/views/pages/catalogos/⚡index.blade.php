@@ -221,7 +221,7 @@ new class extends Component {
             <tbody class="divide-y divide-outline dark:divide-outline-dark">
                 @forelse ($this->catalogValues as $catalogValue)
                     <tr class="hover:bg-surface-alt dark:hover:bg-surface-dark-alt">
-                        <td class="p-4 font-medium">{{ $catalogValue->name }}</td>
+                        <td class="p-4 font-medium {{ $this->selectedCatalogType?->value === 'Documents' ? 'uppercase' : '' }}">{{ $catalogValue->name }}</td>
                         <td class="p-4">{{ $catalogValue->value }}</td>
                         <td class="p-4">
                             <div class="flex items-center justify-center gap-2">
